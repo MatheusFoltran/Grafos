@@ -60,37 +60,8 @@ def prim(n_vertices: int, adj: List[List[Tuple[int, float]]]) -> Tuple[List[Tupl
     return mst_edges, total_weight
 
 
-def validate_mst_prim(n_vertices: int, mst_edges: List[Tuple[int, int, float]]) -> bool:
-    """
-    Valida se o resultado é uma floresta geradora válida.
-    
-    Args:
-        n_vertices: número de vértices
-        mst_edges: arestas retornadas pelo algoritmo
-    
-    Returns:
-        True se válida, False caso contrário
-    """
-    # Verificar se não há ciclos usando Union-Find simples
-    parent = list(range(n_vertices))
-    
-    def find(x):
-        if parent[x] != x:
-            parent[x] = find(parent[x])
-        return parent[x]
-    
-    def union(x, y):
-        px, py = find(x), find(y)
-        if px == py:
-            return False  # Ciclo detectado
-        parent[px] = py
-        return True
-    
-    for u, v, _ in mst_edges:
-        if not union(u, v):
-            return False
-    
-    return True
+# Validação simplificada movida para validation.py
+# Use: from validation import validate_mst_complete
 
 
 if __name__ == "__main__":
@@ -112,4 +83,5 @@ if __name__ == "__main__":
     mst, weight = prim(n, adj)
     print(f"MST: {mst}")
     print(f"Peso total: {weight}")
-    print(f"Válida: {validate_mst_prim(n, mst)}")
+    print(f"Número de arestas: {len(mst)} (esperado: {n-1})")
+    print("\nPara validação completa, use validation.py")

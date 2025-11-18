@@ -8,8 +8,9 @@ from pathlib import Path
 
 # Importações dos módulos do projeto
 from graph_loader import load_graph
-from prim import prim, validate_mst_prim
-from kruskal import kruskal, validate_mst_kruskal
+from prim import prim
+from kruskal import kruskal
+from validation import validate_mst_complete
 from metrics import measure_performance, format_time, format_memory
 
 
@@ -32,12 +33,14 @@ def run_algorithm(algorithm: str, graph, repetitions: int = 1):
             adj = graph.get_adjacency_list()
             metrics = measure_performance(prim, graph.n_vertices, adj)
             mst_edges, total_weight = metrics['result']
-            valid = validate_mst_prim(graph.n_vertices, mst_edges)
+            # Validação completa
+            valid, msg = validate_mst_complete(graph.n_vertices, graph.edges, mst_edges)
         
         elif algorithm == 'kruskal':
             metrics = measure_performance(kruskal, graph.n_vertices, graph.edges)
             mst_edges, total_weight = metrics['result']
-            valid = validate_mst_kruskal(graph.n_vertices, mst_edges)
+            # Validação completa
+            valid, msg = validate_mst_complete(graph.n_vertices, graph.edges, mst_edges)
         
         else:
             raise ValueError(f"Algoritmo inválido: {algorithm}")
@@ -50,16 +53,20 @@ def run_algorithm(algorithm: str, graph, repetitions: int = 1):
             'peak_memory_mb': metrics['peak_memory_mb'],
             'mst_weight': total_weight,
             'mst_edges_count': len(mst_edges),
-            'valid': valid
+            'valid': valid,
+            'validation_msg': msg
         })
         
         if i == 0:  # Primeira execução
             print(f"\n{algorithm.upper()} - Execução 1/{repetitions}")
             print(f"  Peso da MST: {total_weight:.2f}")
             print(f"  Arestas na MST: {len(mst_edges)}")
-            print(f"  Válida: {valid}")
+            print(f"  Validação: {msg}")
             print(f"  Tempo: {format_time(metrics['time_seconds'])}")
             print(f"  Memória pico: {format_memory(metrics['peak_memory_mb'])}")
+            
+            if not valid:
+                print(f"  ⚠️  ATENÇÃO: MST INVÁLIDA!")
     
     return results
 

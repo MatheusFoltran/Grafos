@@ -7,8 +7,9 @@ import sys
 from pathlib import Path
 from typing import List, Dict
 from graph_loader import load_graph
-from prim import prim, validate_mst_prim
-from kruskal import kruskal, validate_mst_kruskal
+from prim import prim
+from kruskal import kruskal
+from validation import validate_mst_complete
 from metrics import measure_performance
 
 
@@ -46,7 +47,7 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
             for rep in range(repetitions):
                 metrics = measure_performance(prim, graph.n_vertices, adj)
                 mst_edges, total_weight = metrics['result']
-                valid = validate_mst_prim(graph.n_vertices, mst_edges)
+                valid, msg = validate_mst_complete(graph.n_vertices, graph.edges, mst_edges)
                 
                 all_results.append({
                     'graph_name': name,
@@ -64,7 +65,8 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
                 
                 if rep == 0:
                     print(f"  Peso MST: {total_weight:.2f}, "
-                          f"Tempo: {metrics['time_seconds']*1000:.2f}ms")
+                          f"Tempo: {metrics['time_seconds']*1000:.2f}ms, "
+                          f"Válida: {'✓' if valid else '✗'}")
             
             # Executar Kruskal
             print(f"\nExecutando Kruskal ({repetitions} repetições)...")
@@ -72,7 +74,7 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
             for rep in range(repetitions):
                 metrics = measure_performance(kruskal, graph.n_vertices, graph.edges)
                 mst_edges, total_weight = metrics['result']
-                valid = validate_mst_kruskal(graph.n_vertices, mst_edges)
+                valid, msg = validate_mst_complete(graph.n_vertices, graph.edges, mst_edges)
                 
                 all_results.append({
                     'graph_name': name,
@@ -90,7 +92,8 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
                 
                 if rep == 0:
                     print(f"  Peso MST: {total_weight:.2f}, "
-                          f"Tempo: {metrics['time_seconds']*1000:.2f}ms")
+                          f"Tempo: {metrics['time_seconds']*1000:.2f}ms, "
+                          f"Válida: {'✓' if valid else '✗'}")
         
         except Exception as e:
             print(f"ERRO ao processar {name}: {e}")
@@ -118,29 +121,48 @@ def save_results(results: List[Dict], output_file: str):
     
     print(f"\n✓ Resultados salvos em: {output_file}")
 
-
 def main():
-    """Executa experimentos em grafos configurados."""
-    
-    # Configurar grafos para teste
-    # AJUSTE OS CAMINHOS CONFORME SUA ESTRUTURA DE PASTAS
-    graph_configs = [
-        {
-            'name': 'grafo1',
-            'vertices': 'grafos/grafo1/vertices.csv',
-            'edges': 'grafos/grafo1/edges.csv'
-        },
-        {
-            'name': 'grafo2',
-            'vertices': 'grafos/grafo2/vertices.csv',
-            'edges': 'grafos/grafo2/edges.csv'
-        },
-        # Adicione mais grafos aqui...
-    ]
-    
+    """Executa experimentos em grafos configurados.
+
+    Agora o script tenta descobrir automaticamente subpastas em `Grafos/` e localizar
+    os arquivos de nós e arestas (por exemplo `Nodes*.csv` e `Edges*.csv`). Isso evita
+    problemas com nomes/capitalização diferentes (ex: `Nodes1.csv`, `EEdges2.csv`).
+    """
+
+    # Descobrir grafos automaticamente na pasta raiz 'Grafos'
+    project_root = Path(__file__).resolve().parents[1]
+    grafos_dir = project_root / 'Grafos'
+
+    graph_configs = []
+    if grafos_dir.exists() and grafos_dir.is_dir():
+        for sub in sorted(grafos_dir.iterdir()):
+            if not sub.is_dir():
+                continue
+
+            # Procurar arquivos de nós e arestas por padrões simples (case-insensitive)
+            nodes_file = None
+            edges_file = None
+            for f in sub.iterdir():
+                name = f.name.lower()
+                if any(k in name for k in ('node', 'nodes', 'vert', 'vertices')) and nodes_file is None:
+                    nodes_file = str(f)
+                if 'edge' in name and edges_file is None:
+                    edges_file = str(f)
+
+            if nodes_file and edges_file:
+                graph_configs.append({
+                    'name': sub.name,
+                    'vertices': nodes_file,
+                    'edges': edges_file
+                })
+            else:
+                print(f"⚠ Pulando {sub.name}: não foi possível localizar nodes/edges")
+    else:
+        print(f"ERRO: pasta de grafos não encontrada: {grafos_dir}")
+
     # Número de repetições por experimento
     repetitions = 10
-    
+
     # Validar que arquivos existem
     valid_configs = []
     for config in graph_configs:

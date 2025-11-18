@@ -110,24 +110,8 @@ def kruskal(n_vertices: int, edges: List[Tuple[int, int, float]]) -> Tuple[List[
     return mst_edges, total_weight
 
 
-def validate_mst_kruskal(n_vertices: int, mst_edges: List[Tuple[int, int, float]]) -> bool:
-    """
-    Valida se o resultado é uma floresta geradora válida.
-    
-    Args:
-        n_vertices: número de vértices
-        mst_edges: arestas retornadas pelo algoritmo
-    
-    Returns:
-        True se válida, False caso contrário
-    """
-    uf = UnionFind(n_vertices)
-    
-    for u, v, _ in mst_edges:
-        if not uf.union(u, v):
-            return False  # Ciclo detectado
-    
-    return True
+# Validação simplificada movida para validation.py
+# Use: from validation import validate_mst_complete
 
 
 if __name__ == "__main__":
@@ -150,7 +134,7 @@ if __name__ == "__main__":
     mst, weight = kruskal(n, edges)
     print(f"MST: {mst}")
     print(f"Peso total: {weight}")
-    print(f"Válida: {validate_mst_kruskal(n, mst)}")
+    print(f"Número de arestas: {len(mst)} (esperado: {n-1})")
     
     # Teste Union-Find isolado
     print("\nTestando Union-Find:")
@@ -161,3 +145,4 @@ if __name__ == "__main__":
     print(f"Após unions: {uf.n_components}")
     print(f"0 e 1 conectados? {uf.connected(0, 1)}")
     print(f"0 e 2 conectados? {uf.connected(0, 2)}")
+    print("\nPara validação completa, use validation.py")
