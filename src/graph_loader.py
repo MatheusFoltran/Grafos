@@ -127,6 +127,18 @@ def load_graph(vertices_file: str, edges_file: str) -> Graph:
                 coords.append((x, y))
                 coord_to_index[(round(x, 6), round(y, 6))] = internal
 
+            # Atualizar o objeto graph com os vértices lidos (importante para get_adjacency_list)
+            for idx, (x, y) in enumerate(coords):
+                # usar coordenadas reais como chave para permitir buscas futuras
+                graph.vertices[(x, y)] = idx
+            graph.n_vertices = len(coords)
+
+    # Caso o branch com 'id' tenha sido tomado acima, garantir que graph também seja populado
+    if graph.n_vertices == 0:
+        for idx, (x, y) in enumerate(coords):
+            graph.vertices[(x, y)] = idx
+        graph.n_vertices = len(coords)
+
     # --- Ler arestas e calcular pesos (suporta índices 1-based/0-based ou coordenadas) ---
     with open(edges_file, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)

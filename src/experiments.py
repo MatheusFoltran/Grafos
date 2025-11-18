@@ -60,7 +60,8 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
                     'peak_memory_mb': metrics['peak_memory_mb'],
                     'mst_weight': total_weight,
                     'mst_edges_count': len(mst_edges),
-                    'valid': valid
+                    'valid': valid,
+                    'validation_msg': msg
                 })
                 
                 if rep == 0:
@@ -87,7 +88,8 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
                     'peak_memory_mb': metrics['peak_memory_mb'],
                     'mst_weight': total_weight,
                     'mst_edges_count': len(mst_edges),
-                    'valid': valid
+                    'valid': valid,
+                    'validation_msg': msg
                 })
                 
                 if rep == 0:
@@ -113,6 +115,9 @@ def save_results(results: List[Dict], output_file: str):
         'time_seconds', 'memory_mb', 'peak_memory_mb',
         'mst_weight', 'mst_edges_count', 'valid'
     ]
+    # include validation message for debugging invalid MSTs
+    if 'validation_msg' in results[0]:
+        fieldnames.append('validation_msg')
     
     with open(output_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
