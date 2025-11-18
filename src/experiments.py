@@ -57,8 +57,11 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5, coord_toler
                     'algorithm': 'prim',
                     'repetition': rep + 1,
                     'time_seconds': metrics['time_seconds'],
+                    'cpu_seconds': metrics.get('cpu_seconds'),
                     'memory_mb': metrics['memory_mb'],
                     'peak_memory_mb': metrics['peak_memory_mb'],
+                    'mem_rss_before_mb': metrics.get('mem_rss_before_mb'),
+                    'mem_rss_mb': metrics.get('mem_rss_mb'),
                     'mst_weight': total_weight,
                     'mst_edges_count': len(mst_edges),
                     'valid': valid,
@@ -85,8 +88,11 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5, coord_toler
                     'algorithm': 'kruskal',
                     'repetition': rep + 1,
                     'time_seconds': metrics['time_seconds'],
+                    'cpu_seconds': metrics.get('cpu_seconds'),
                     'memory_mb': metrics['memory_mb'],
                     'peak_memory_mb': metrics['peak_memory_mb'],
+                    'mem_rss_before_mb': metrics.get('mem_rss_before_mb'),
+                    'mem_rss_mb': metrics.get('mem_rss_mb'),
                     'mst_weight': total_weight,
                     'mst_edges_count': len(mst_edges),
                     'valid': valid,
@@ -114,11 +120,20 @@ def save_results(results: List[Dict], output_file: str):
     fieldnames = [
         'graph_name', 'n_vertices', 'n_edges', 'algorithm', 'repetition',
         'time_seconds', 'memory_mb', 'peak_memory_mb',
+        'cpu_seconds',
         'mst_weight', 'mst_edges_count', 'valid'
     ]
     # include validation message for debugging invalid MSTs
     if 'validation_msg' in results[0]:
         fieldnames.append('validation_msg')
+    # include RSS memory if present
+    if 'mem_rss_mb' in results[0]:
+        fieldnames.append('mem_rss_mb')
+    if 'mem_rss_before_mb' in results[0]:
+        fieldnames.append('mem_rss_before_mb')
+    if 'cpu_seconds' in results[0]:
+        # ensure cpu column appears near time columns
+        pass
     
     with open(output_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)

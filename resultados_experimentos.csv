@@ -1,5 +1,5 @@
-graph_name,n_vertices,n_edges,algorithm,repetition,time_seconds,memory_mb,peak_memory_mb,mst_weight,mst_edges_count,valid,validation_msg
-Grafo1,8980,12624,prim,1,0.026813700000275276,0.62115478515625,0.6899642944335938,3015372.425687345,8979,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)
-Grafo1,8980,12624,kruskal,1,0.030740100000912207,0.6193466186523438,0.8947257995605469,3015372.425687339,8979,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)
-Grafo2,5152,7083,prim,1,0.012872999999672174,0.232269287109375,0.2717132568359375,2641212.28748726,5151,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)
-Grafo2,5152,7083,kruskal,1,0.016866699999809498,0.23226165771484375,0.3889808654785156,2641212.287487262,5151,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)
+graph_name,n_vertices,n_edges,algorithm,repetition,time_seconds,memory_mb,peak_memory_mb,cpu_seconds,mst_weight,mst_edges_count,valid,validation_msg,mem_rss_mb,mem_rss_before_mb
+Grafo1,8980,12624,prim,1,0.026545000000623986,0.6210479736328125,0.689910888671875,0.03125,3015372.425687345,8979,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas),29.8359375,29.8515625
+Grafo1,8980,12624,kruskal,1,0.03021959999932733,0.6193466186523438,0.8947257995605469,0.03125,3015372.425687339,8979,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas),29.38671875,29.796875
+Grafo2,5152,7083,prim,1,0.01300730000002659,0.232269287109375,0.2717132568359375,0.015625,2641212.28748726,5151,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas),32.08203125,31.87890625
+Grafo2,5152,7083,kruskal,1,0.01610360000086075,0.23226165771484375,0.3889808654785156,0.015625,2641212.287487262,5151,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas),31.1875,31.75390625

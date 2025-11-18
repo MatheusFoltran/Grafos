@@ -5,6 +5,14 @@ import time
 import tracemalloc
 from typing import Callable, Any, Dict
 
+# Optional psutil for RSS measurements
+try:
+    import psutil
+    _HAS_PSUTIL = True
+except Exception:
+    psutil = None
+    _HAS_PSUTIL = False
+
 
 def measure_performance(func: Callable, *args, **kwargs) -> Dict[str, Any]:
     """
@@ -21,24 +29,51 @@ def measure_performance(func: Callable, *args, **kwargs) -> Dict[str, Any]:
         - memory_mb: memória usada em MB
         - peak_memory_mb: pico de memória em MB
     """
-    # Iniciar medição de memória
+    # opcional: medir RSS do processo antes (se psutil disponível)
+    mem_rss_before = None
+    if _HAS_PSUTIL:
+        try:
+            proc = psutil.Process()
+            mem_rss_before = proc.memory_info().rss
+        except Exception:
+            mem_rss_before = None
+
+    # Iniciar medição de memória tracemalloc
     tracemalloc.start()
-    
-    # Medir tempo
+
+    # Medir tempo (wall) e tempo de CPU
     start_time = time.perf_counter()
+    start_cpu = time.process_time()
     result = func(*args, **kwargs)
+    end_cpu = time.process_time()
     end_time = time.perf_counter()
-    
-    # Obter estatísticas de memória
+
+    # Obter estatísticas de memória tracemalloc
     current, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-    
-    return {
+
+    # opcional: medir RSS do processo após execução
+    mem_rss_after = None
+    if _HAS_PSUTIL:
+        try:
+            mem_rss_after = proc.memory_info().rss
+        except Exception:
+            mem_rss_after = None
+
+    out = {
         'result': result,
         'time_seconds': end_time - start_time,
+        'cpu_seconds': end_cpu - start_cpu,
         'memory_mb': current / (1024 * 1024),
         'peak_memory_mb': peak / (1024 * 1024)
     }
+
+    if mem_rss_before is not None:
+        out['mem_rss_before_mb'] = mem_rss_before / (1024 * 1024)
+    if mem_rss_after is not None:
+        out['mem_rss_mb'] = mem_rss_after / (1024 * 1024)
+
+    return out
 
 
 def format_time(seconds: float) -> str:
