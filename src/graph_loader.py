@@ -41,7 +41,7 @@ def euclidean_distance(x1: float, y1: float, x2: float, y2: float) -> float:
     return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 
-def load_graph(vertices_file: str, edges_file: str) -> Graph:
+def load_graph(vertices_file: str, edges_file: str, coord_tolerance: float = 0.0) -> Graph:
     """
     Carrega um grafo a partir de arquivos CSV.
 
@@ -51,6 +51,13 @@ def load_graph(vertices_file: str, edges_file: str) -> Graph:
       OU com 4 colunas representando coordenadas (x1, y1, x2, y2).
 
     Retorna um objeto `Graph` com índices internos 0-based.
+
+    Args:
+        coord_tolerance: se > 0, tenta mapear arestas definidas por coordenadas
+            para vértices pelo vizinho mais próximo dentro desta tolerância
+            (unidades da mesma escala das coordenadas). Se `scipy` estiver
+            disponível, usa `KDTree` para aceleração; caso contrário usa varredura
+            linear (mais lenta).
     """
     graph = Graph()
 
@@ -139,6 +146,29 @@ def load_graph(vertices_file: str, edges_file: str) -> Graph:
             graph.vertices[(x, y)] = idx
         graph.n_vertices = len(coords)
 
+    # Preparar estrutura para deduplicação de arestas e busca tolerante por coordenadas
+    seen_edges = set()  # store (min(u,v), max(u,v)) to avoid duplicates
+    use_kdtree = False
+    kdtree = None
+    if coord_tolerance and coord_tolerance > 0 and coords:
+        try:
+            from scipy.spatial import KDTree    # Não está sendo usado
+            kdtree = KDTree(coords)
+            use_kdtree = True
+        except Exception:
+            # scipy não disponível — fallback para busca linear
+            use_kdtree = False
+    # Se scipy não estiver disponível e foi solicitada tolerância, construir um spatial-hash grid
+    grid = None
+    cell_size = None
+    if not use_kdtree and coord_tolerance and coord_tolerance > 0 and coords:
+        cell_size = float(coord_tolerance)
+        grid = {}
+        for i, (vx, vy) in enumerate(coords):
+            cell_x = int(math.floor(vx / cell_size))
+            cell_y = int(math.floor(vy / cell_size))
+            grid.setdefault((cell_x, cell_y), []).append(i)
+
     # --- Ler arestas e calcular pesos (suporta índices 1-based/0-based ou coordenadas) ---
     with open(edges_file, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
@@ -171,12 +201,18 @@ def load_graph(vertices_file: str, edges_file: str) -> Graph:
                     else:
                         v = v_raw - 1
 
-                    # Validate indices
+                    # Validate indices and ignore self-loops and duplicates
                     if 0 <= u < len(coords) and 0 <= v < len(coords) and u != v:
-                        x1, y1 = coords[u]
-                        x2, y2 = coords[v]
-                        weight = euclidean_distance(x1, y1, x2, y2)
-                        graph.add_edge(u, v, weight)
+                        a, b = (u, v) if u <= v else (v, u)
+                        if (a, b) in seen_edges:
+                            # duplicate — pular
+                            pass
+                        else:
+                            x1, y1 = coords[u]
+                            x2, y2 = coords[v]
+                            weight = euclidean_distance(x1, y1, x2, y2)
+                            graph.add_edge(u, v, weight)
+                            seen_edges.add((a, b))
                     continue
                 except Exception:
                     # not integers — try coordinate-based edge
@@ -187,14 +223,73 @@ def load_graph(vertices_file: str, edges_file: str) -> Graph:
             if len(row) >= 4:
                 try:
                     x1 = float(row[0]); y1 = float(row[1]); x2 = float(row[2]); y2 = float(row[3])
-                    key1 = (round(x1, 6), round(y1, 6))
-                    key2 = (round(x2, 6), round(y2, 6))
-                    if key1 in coord_to_index and key2 in coord_to_index:
-                        u = coord_to_index[key1]
-                        v = coord_to_index[key2]
-                        if u != v:
+                    # Tentar mapear coordenadas para índices de vértices com tolerância
+                    u = v = None
+                    if use_kdtree and kdtree is not None:
+                        # KDTree retorna (dist, idx)
+                        dist1, idx1 = kdtree.query((x1, y1))
+                        dist2, idx2 = kdtree.query((x2, y2))
+                        if dist1 <= coord_tolerance:
+                            u = int(idx1)
+                        if dist2 <= coord_tolerance:
+                            v = int(idx2)
+                    else:
+                        # fallback: usar spatial-hash grid (se construído) para procurar vizinhos próximos
+                        if coord_tolerance and coord_tolerance > 0:
+                            best_d1 = float('inf'); best_i1 = None
+                            best_d2 = float('inf'); best_i2 = None
+                            if grid is not None and cell_size is not None:
+                                # procurar nas células vizinhas (3x3)
+                                cx1 = int(math.floor(x1 / cell_size)); cy1 = int(math.floor(y1 / cell_size))
+                                cx2 = int(math.floor(x2 / cell_size)); cy2 = int(math.floor(y2 / cell_size))
+                                candidates1 = []
+                                candidates2 = []
+                                for dx in (-1, 0, 1):
+                                    for dy in (-1, 0, 1):
+                                        candidates1.extend(grid.get((cx1 + dx, cy1 + dy), []))
+                                        candidates2.extend(grid.get((cx2 + dx, cy2 + dy), []))
+                                # checar candidatos
+                                for i in candidates1:
+                                    cx, cy = coords[i]
+                                    d1 = euclidean_distance(x1, y1, cx, cy)
+                                    if d1 < best_d1:
+                                        best_d1 = d1; best_i1 = i
+                                for i in candidates2:
+                                    cx, cy = coords[i]
+                                    d2 = euclidean_distance(x2, y2, cx, cy)
+                                    if d2 < best_d2:
+                                        best_d2 = d2; best_i2 = i
+                            else:
+                                # grid não disponível -> fallback completo (linear)
+                                for i, (cx, cy) in enumerate(coords):
+                                    d1 = euclidean_distance(x1, y1, cx, cy)
+                                    if d1 < best_d1:
+                                        best_d1 = d1; best_i1 = i
+                                    d2 = euclidean_distance(x2, y2, cx, cy)
+                                    if d2 < best_d2:
+                                        best_d2 = d2; best_i2 = i
+                            if best_d1 <= coord_tolerance:
+                                u = best_i1
+                            if best_d2 <= coord_tolerance:
+                                v = best_i2
+
+                    # Se tolerância não encontrada ou coord_tolerance == 0, usar mapeamento por key exato
+                    if u is None or v is None:
+                        key1 = (round(x1, 6), round(y1, 6))
+                        key2 = (round(x2, 6), round(y2, 6))
+                        if key1 in coord_to_index:
+                            u = coord_to_index[key1]
+                        if key2 in coord_to_index:
+                            v = coord_to_index[key2]
+
+                    if u is not None and v is not None and u != v:
+                        a, b = (u, v) if u <= v else (v, u)
+                        if (a, b) in seen_edges:
+                            pass
+                        else:
                             weight = euclidean_distance(x1, y1, x2, y2)
                             graph.add_edge(u, v, weight)
+                            seen_edges.add((a, b))
                 except Exception:
                     continue
 

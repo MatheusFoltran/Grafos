@@ -2,6 +2,7 @@
 Script para executar experimentos automatizados em múltiplos grafos.
 Salva resultados em CSV para análise posterior.
 """
+import argparse
 import csv
 import sys
 from pathlib import Path
@@ -13,7 +14,7 @@ from validation import validate_mst
 from metrics import measure_performance
 
 
-def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dict]:
+def run_experiments(graph_configs: List[Dict], repetitions: int = 5, coord_tolerance: float = 0.0) -> List[Dict]:
     """
     Executa experimentos em múltiplos grafos.
     
@@ -36,12 +37,12 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
         print(f"{'='*70}")
         
         try:
-            # Carregar grafo
-            graph = load_graph(vertices_file, edges_file)
+            # Carregar grafo (pode usar coord_tolerance para matching tolerante por coordenadas)
+            graph = load_graph(vertices_file, edges_file, coord_tolerance=coord_tolerance)
             print(f"Grafo: {graph.n_vertices} vértices, {graph.n_edges} arestas")
             
             # Executar Prim
-            print(f"\nExecutando Prim ({repetitions} repetições)...")
+            print(f"\nExecutando Prim ({repetitions} repetições)... (coord_tolerance={coord_tolerance})")
             adj = graph.get_adjacency_list()
             
             for rep in range(repetitions):
@@ -70,7 +71,7 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
                           f"Válida: {'✓' if valid else '✗'}")
             
             # Executar Kruskal
-            print(f"\nExecutando Kruskal ({repetitions} repetições)...")
+            print(f"\nExecutando Kruskal ({repetitions} repetições)... (coord_tolerance={coord_tolerance})")
             
             for rep in range(repetitions):
                 metrics = measure_performance(kruskal, graph.n_vertices, graph.edges)
@@ -165,8 +166,12 @@ def main():
     else:
         print(f"ERRO: pasta de grafos não encontrada: {grafos_dir}")
 
-    # Número de repetições por experimento
-    repetitions = 10
+    parser = argparse.ArgumentParser(description='Executa experimentos automáticos sobre grafos na pasta Grafos/.')
+    parser.add_argument('--repetitions', '-r', type=int, default=10, help='Número de repetições por algoritmo (default: 10)')
+    parser.add_argument('--coord-tolerance', '-c', type=float, default=0.0, help='Tolerância para matching por coordenadas (default: 0.0)')
+    args = parser.parse_args()
+    repetitions = args.repetitions
+    coord_tolerance = args.coord_tolerance
 
     # Validar que arquivos existem
     valid_configs = []
@@ -186,10 +191,11 @@ def main():
     print(f"{'='*70}")
     print(f"Grafos: {len(valid_configs)}")
     print(f"Repetições por algoritmo: {repetitions}")
+    print(f"Coord tolerance: {coord_tolerance}")
     print(f"Total de execuções: {len(valid_configs) * 2 * repetitions}")
     
     # Executar experimentos
-    results = run_experiments(valid_configs, repetitions)
+    results = run_experiments(valid_configs, repetitions, coord_tolerance=coord_tolerance)
     
     # Salvar resultados
     output_file = 'resultados_experimentos.csv'

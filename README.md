@@ -139,6 +139,30 @@ Para cada execução:
 - 🔢 **Número de arestas na MST**
 - ✅ **Validação** (floresta geradora válida)
 
+### Medição de Memória (limitações)
+
+- Por padrão o projeto usa `tracemalloc` (em `src/metrics.py`) para medir alocações do heap do Python. Isso é portátil e útil para comparar implementações puramente Python, mas tem limitações importantes:
+    - `tracemalloc` mede apenas alocações gerenciadas pelo interpretador Python (heap). Não mede o RSS total do processo (memória usada por bibliotecas C, buffers do SO, ou overhead do interpretador).
+    - No Windows o módulo `resource` não está disponível; portanto `tracemalloc` é a opção mais portátil.
+    - Se quiser medir o uso total de memória do processo (RSS), recomendo usar `psutil` como opção adicional (`pip install psutil`). Implementar `psutil` permite coletar `mem_rss` (em bytes) e compará-lo com `tracemalloc`.
+
+    Recomendação: mantenha `tracemalloc` como padrão para comparações entre implementações Python, e documente diferenças ao interpretar resultados. Se precisar eu posso adicionar um flag `--mem-method` para alternar para `psutil` quando instalado.
+
+### Matching tolerante por coordenadas (`coord_tolerance`)
+
+- Por padrão o `graph_loader` mapeia arestas fornecidas por coordenadas (x1,y1,x2,y2) para vértices fazendo um lookup exato por coordenadas arredondadas (6 casas). Isto é rápido e determinístico quando as coordenadas batem exatamente.
+- Para casos onde as coordenadas das arestas têm pequeno ruído (por ex. exportações com diferenças de ponto flutuante), há uma opção de tolerância espacial:
+    - `--coord-tolerance <valor>` em `src/experiments.py` (ou chamando `load_graph(..., coord_tolerance=<valor>)`) tenta mapear as coordenadas de arestas para o vértice mais próximo dentro da tolerância fornecida.
+    - Implementação: se `scipy.spatial.KDTree` estiver instalado, usa KDTree; caso contrário, o loader usa um spatial-hash grid interno (sem dependências extras) para reduzir as buscas a células vizinhas (muito mais rápido que varredura completa).
+    - Exemplo de uso (experimentos):
+
+```powershell
+python src/experiments.py --repetitions 5 --coord-tolerance 0.0001
+```
+
+    - `coord_tolerance` deve estar na mesma unidade das coordenadas (mesma escala). Se `coord_tolerance == 0` (padrão), o comportamento anterior (arredondamento exato) é usado.
+
+
 ## 📝 Checklist de Entrega
 
 - [ ] Implementação correta de Prim (com heap)

@@ -1,0 +1,5 @@
+graph_name,n_vertices,n_edges,algorithm,repetition,time_seconds,memory_mb,peak_memory_mb,mst_weight,mst_edges_count,valid,validation_msg
+Grafo1,8980,12624,prim,1,0.026813700000275276,0.62115478515625,0.6899642944335938,3015372.425687345,8979,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)
+Grafo1,8980,12624,kruskal,1,0.030740100000912207,0.6193466186523438,0.8947257995605469,3015372.425687339,8979,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)
+Grafo2,5152,7083,prim,1,0.012872999999672174,0.232269287109375,0.2717132568359375,2641212.28748726,5151,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)
+Grafo2,5152,7083,kruskal,1,0.016866699999809498,0.23226165771484375,0.3889808654785156,2641212.287487262,5151,True,✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)
