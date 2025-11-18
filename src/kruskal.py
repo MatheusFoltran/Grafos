@@ -110,8 +110,8 @@ def kruskal(n_vertices: int, edges: List[Tuple[int, int, float]]) -> Tuple[List[
     return mst_edges, total_weight
 
 
-# Validação simplificada movida para validation.py
-# Use: from validation import validate_mst_complete
+# Validação movida para validation.py
+# Use: from validation import validate_mst
 
 
 if __name__ == "__main__":

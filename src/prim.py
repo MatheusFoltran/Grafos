@@ -60,8 +60,8 @@ def prim(n_vertices: int, adj: List[List[Tuple[int, float]]]) -> Tuple[List[Tupl
     return mst_edges, total_weight
 
 
-# Validação simplificada movida para validation.py
-# Use: from validation import validate_mst_complete
+# Validação movida para validation.py
+# Use: from validation import validate_mst
 
 
 if __name__ == "__main__":

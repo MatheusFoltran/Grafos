@@ -10,7 +10,7 @@ from pathlib import Path
 from graph_loader import load_graph
 from prim import prim
 from kruskal import kruskal
-from validation import validate_mst_complete
+from validation import validate_mst
 from metrics import measure_performance, format_time, format_memory
 
 
@@ -34,13 +34,13 @@ def run_algorithm(algorithm: str, graph, repetitions: int = 1):
             metrics = measure_performance(prim, graph.n_vertices, adj)
             mst_edges, total_weight = metrics['result']
             # Validação completa
-            valid, msg = validate_mst_complete(graph.n_vertices, graph.edges, mst_edges)
+            valid, msg = validate_mst(graph.n_vertices, graph.edges, mst_edges)
         
         elif algorithm == 'kruskal':
             metrics = measure_performance(kruskal, graph.n_vertices, graph.edges)
             mst_edges, total_weight = metrics['result']
             # Validação completa
-            valid, msg = validate_mst_complete(graph.n_vertices, graph.edges, mst_edges)
+            valid, msg = validate_mst(graph.n_vertices, graph.edges, mst_edges)
         
         else:
             raise ValueError(f"Algoritmo inválido: {algorithm}")

@@ -77,9 +77,9 @@ def get_original_components(n_vertices: int, edges: List[Tuple[int, int, float]]
     return components
 
 
-def validate_mst_complete(n_vertices: int,
-                          original_edges: List[Tuple[int, int, float]],
-                          mst_edges: List[Tuple[int, int, float]]) -> Tuple[bool, str]:
+def validate_mst(n_vertices: int,
+                 original_edges: List[Tuple[int, int, float]],
+                 mst_edges: List[Tuple[int, int, float]]) -> Tuple[bool, str]:
     """Validação completa de MST/Floresta.
 
     Condições verificadas:
@@ -131,19 +131,6 @@ def validate_mst_complete(n_vertices: int,
     return True, "✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)"
 
 
-def validate_mst_simple(n_vertices: int, mst_edges: List[Tuple[int, int, float]]) -> bool:
-    """
-    Validação simples (apenas ciclos) - mantida para compatibilidade.
-    
-    ATENÇÃO: Não verifica cobertura completa! Use validate_mst_complete().
-    """
-    uf = UnionFind(n_vertices)
-    for u, v, _ in mst_edges:
-        if not uf.union(u, v):
-            return False
-    return True
-
-
 # Testes unitários
 if __name__ == "__main__":
     print("="*70)
@@ -155,21 +142,21 @@ if __name__ == "__main__":
     n = 4
     original = [(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0), (0, 3, 4.0)]
     mst = [(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0)]
-    valid, msg = validate_mst_complete(n, original, mst)
+    valid, msg = validate_mst(n, original, mst)
     print(f"   {msg}")
     assert valid, "Deveria ser válida!"
     
     # Teste 2: MST incompleta (faltando vértice)
     print("\n2. MST incompleta (faltando vértice):")
     mst_incomplete = [(0, 1, 1.0), (1, 2, 2.0)]  # Falta vértice 3!
-    valid, msg = validate_mst_complete(n, original, mst_incomplete)
+    valid, msg = validate_mst(n, original, mst_incomplete)
     print(f"   {msg}")
     assert not valid, "Deveria ser inválida!"
     
     # Teste 3: MST com ciclo
     print("\n3. MST com ciclo:")
     mst_cycle = [(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0), (0, 3, 4.0)]
-    valid, msg = validate_mst_complete(n, original, mst_cycle)
+    valid, msg = validate_mst(n, original, mst_cycle)
     print(f"   {msg}")
     assert not valid, "Deveria ser inválida!"
     
@@ -180,7 +167,7 @@ if __name__ == "__main__":
                 (3, 4, 3.0), (4, 5, 4.0)]   # Componente 2
     mst = [(0, 1, 1.0), (1, 2, 2.0),       # 2 arestas para 3 vértices
            (3, 4, 3.0), (4, 5, 4.0)]        # 2 arestas para 3 vértices
-    valid, msg = validate_mst_complete(n, original, mst)
+    valid, msg = validate_mst(n, original, mst)
     print(f"   {msg}")
     assert valid, "Deveria ser válida!"
     
@@ -188,7 +175,7 @@ if __name__ == "__main__":
     print("\n5. Floresta incompleta (faltando aresta):")
     mst_incomplete = [(0, 1, 1.0), (1, 2, 2.0),  # Componente 1 OK
                       (3, 4, 3.0)]                # Componente 2 incompleta!
-    valid, msg = validate_mst_complete(n, original, mst_incomplete)
+    valid, msg = validate_mst(n, original, mst_incomplete)
     print(f"   {msg}")
     assert not valid, "Deveria ser inválida!"
     
@@ -197,7 +184,7 @@ if __name__ == "__main__":
     n = 4
     original = [(0, 1, 1.0), (1, 2, 2.0)]  # Vértice 3 isolado
     mst = [(0, 1, 1.0), (1, 2, 2.0)]
-    valid, msg = validate_mst_complete(n, original, mst)
+    valid, msg = validate_mst(n, original, mst)
     print(f"   {msg}")
     assert valid, "Deveria ser válida!"
     
