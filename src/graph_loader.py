@@ -55,9 +55,9 @@ def load_graph(vertices_file: str, edges_file: str, coord_tolerance: float = 0.0
     Args:
         coord_tolerance: se > 0, tenta mapear arestas definidas por coordenadas
             para vértices pelo vizinho mais próximo dentro desta tolerância
-            (unidades da mesma escala das coordenadas). Se `scipy` estiver
-            disponível, usa `KDTree` para aceleração; caso contrário usa varredura
-            linear (mais lenta).
+            (unidades da mesma escala das coordenadas). O loader emprega um
+            spatial-hash grid interno (sem dependências externas) para
+            reduzir a busca a células vizinhas.
     """
     graph = Graph()
 
@@ -148,14 +148,10 @@ def load_graph(vertices_file: str, edges_file: str, coord_tolerance: float = 0.0
 
     # Preparar estrutura para deduplicação de arestas e busca tolerante por coordenadas
     seen_edges = set()  # store (min(u,v), max(u,v)) to avoid duplicates
-    use_kdtree = False
-    kdtree = None
-    # Note: scipy KDTree removed to avoid external dependency.
-    # We always use the spatial-hash grid fallback (or linear search) below.
-    # Se scipy não estiver disponível e foi solicitada tolerância, construir um spatial-hash grid
+    # Usamos um spatial-hash grid como fallback para buscas por coordenadas
     grid = None
     cell_size = None
-    if not use_kdtree and coord_tolerance and coord_tolerance > 0 and coords:
+    if coord_tolerance and coord_tolerance > 0 and coords:
         cell_size = float(coord_tolerance)
         grid = {}
         for i, (vx, vy) in enumerate(coords):

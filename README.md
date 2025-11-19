@@ -153,7 +153,7 @@ Para cada execução:
 - Por padrão o `graph_loader` mapeia arestas fornecidas por coordenadas (x1,y1,x2,y2) para vértices fazendo um lookup exato por coordenadas arredondadas (6 casas). Isto é rápido e determinístico quando as coordenadas batem exatamente.
 - Para casos onde as coordenadas das arestas têm pequeno ruído (por ex. exportações com diferenças de ponto flutuante), há uma opção de tolerância espacial:
     - `--coord-tolerance <valor>` em `src/experiments.py` (ou chamando `load_graph(..., coord_tolerance=<valor>)`) tenta mapear as coordenadas de arestas para o vértice mais próximo dentro da tolerância fornecida.
-    - Implementação: se `scipy.spatial.KDTree` estiver instalado, usa KDTree; caso contrário, o loader usa um spatial-hash grid interno (sem dependências extras) para reduzir as buscas a células vizinhas (muito mais rápido que varredura completa).
+    - Implementação: o loader usa um spatial-hash grid interno (sem dependências extras) para reduzir as buscas a células vizinhas (muito mais rápido que varredura completa).
     - Exemplo de uso (experimentos):
 
 ```powershell
