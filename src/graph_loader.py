@@ -150,14 +150,8 @@ def load_graph(vertices_file: str, edges_file: str, coord_tolerance: float = 0.0
     seen_edges = set()  # store (min(u,v), max(u,v)) to avoid duplicates
     use_kdtree = False
     kdtree = None
-    if coord_tolerance and coord_tolerance > 0 and coords:
-        try:
-            from scipy.spatial import KDTree    # Não está sendo usado
-            kdtree = KDTree(coords)
-            use_kdtree = True
-        except Exception:
-            # scipy não disponível — fallback para busca linear
-            use_kdtree = False
+    # Note: scipy KDTree removed to avoid external dependency.
+    # We always use the spatial-hash grid fallback (or linear search) below.
     # Se scipy não estiver disponível e foi solicitada tolerância, construir um spatial-hash grid
     grid = None
     cell_size = None
@@ -225,53 +219,44 @@ def load_graph(vertices_file: str, edges_file: str, coord_tolerance: float = 0.0
                     x1 = float(row[0]); y1 = float(row[1]); x2 = float(row[2]); y2 = float(row[3])
                     # Tentar mapear coordenadas para índices de vértices com tolerância
                     u = v = None
-                    if use_kdtree and kdtree is not None:
-                        # KDTree retorna (dist, idx)
-                        dist1, idx1 = kdtree.query((x1, y1))
-                        dist2, idx2 = kdtree.query((x2, y2))
-                        if dist1 <= coord_tolerance:
-                            u = int(idx1)
-                        if dist2 <= coord_tolerance:
-                            v = int(idx2)
-                    else:
-                        # fallback: usar spatial-hash grid (se construído) para procurar vizinhos próximos
-                        if coord_tolerance and coord_tolerance > 0:
-                            best_d1 = float('inf'); best_i1 = None
-                            best_d2 = float('inf'); best_i2 = None
-                            if grid is not None and cell_size is not None:
-                                # procurar nas células vizinhas (3x3)
-                                cx1 = int(math.floor(x1 / cell_size)); cy1 = int(math.floor(y1 / cell_size))
-                                cx2 = int(math.floor(x2 / cell_size)); cy2 = int(math.floor(y2 / cell_size))
-                                candidates1 = []
-                                candidates2 = []
-                                for dx in (-1, 0, 1):
-                                    for dy in (-1, 0, 1):
-                                        candidates1.extend(grid.get((cx1 + dx, cy1 + dy), []))
-                                        candidates2.extend(grid.get((cx2 + dx, cy2 + dy), []))
-                                # checar candidatos
-                                for i in candidates1:
-                                    cx, cy = coords[i]
-                                    d1 = euclidean_distance(x1, y1, cx, cy)
-                                    if d1 < best_d1:
-                                        best_d1 = d1; best_i1 = i
-                                for i in candidates2:
-                                    cx, cy = coords[i]
-                                    d2 = euclidean_distance(x2, y2, cx, cy)
-                                    if d2 < best_d2:
-                                        best_d2 = d2; best_i2 = i
-                            else:
-                                # grid não disponível -> fallback completo (linear)
-                                for i, (cx, cy) in enumerate(coords):
-                                    d1 = euclidean_distance(x1, y1, cx, cy)
-                                    if d1 < best_d1:
-                                        best_d1 = d1; best_i1 = i
-                                    d2 = euclidean_distance(x2, y2, cx, cy)
-                                    if d2 < best_d2:
-                                        best_d2 = d2; best_i2 = i
-                            if best_d1 <= coord_tolerance:
-                                u = best_i1
-                            if best_d2 <= coord_tolerance:
-                                v = best_i2
+                    # usar spatial-hash grid (se construído) para procurar vizinhos próximos
+                    if coord_tolerance and coord_tolerance > 0:
+                        best_d1 = float('inf'); best_i1 = None
+                        best_d2 = float('inf'); best_i2 = None
+                        if grid is not None and cell_size is not None:
+                            # procurar nas células vizinhas (3x3)
+                            cx1 = int(math.floor(x1 / cell_size)); cy1 = int(math.floor(y1 / cell_size))
+                            cx2 = int(math.floor(x2 / cell_size)); cy2 = int(math.floor(y2 / cell_size))
+                            candidates1 = []
+                            candidates2 = []
+                            for dx in (-1, 0, 1):
+                                for dy in (-1, 0, 1):
+                                    candidates1.extend(grid.get((cx1 + dx, cy1 + dy), []))
+                                    candidates2.extend(grid.get((cx2 + dx, cy2 + dy), []))
+                            # checar candidatos
+                            for i in candidates1:
+                                cx, cy = coords[i]
+                                d1 = euclidean_distance(x1, y1, cx, cy)
+                                if d1 < best_d1:
+                                    best_d1 = d1; best_i1 = i
+                            for i in candidates2:
+                                cx, cy = coords[i]
+                                d2 = euclidean_distance(x2, y2, cx, cy)
+                                if d2 < best_d2:
+                                    best_d2 = d2; best_i2 = i
+                        else:
+                            # grid não disponível -> fallback completo (linear)
+                            for i, (cx, cy) in enumerate(coords):
+                                d1 = euclidean_distance(x1, y1, cx, cy)
+                                if d1 < best_d1:
+                                    best_d1 = d1; best_i1 = i
+                                d2 = euclidean_distance(x2, y2, cx, cy)
+                                if d2 < best_d2:
+                                    best_d2 = d2; best_i2 = i
+                        if best_d1 <= coord_tolerance:
+                            u = best_i1
+                        if best_d2 <= coord_tolerance:
+                            v = best_i2
 
                     # Se tolerância não encontrada ou coord_tolerance == 0, usar mapeamento por key exato
                     if u is None or v is None:
