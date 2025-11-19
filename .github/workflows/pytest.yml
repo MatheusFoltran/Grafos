@@ -22,6 +22,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Print environment
+        run: |
+          python --version
+          pip --version
+          pip list --format=columns || true
+
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 

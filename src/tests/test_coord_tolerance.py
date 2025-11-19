@@ -100,3 +100,23 @@ def test_coordinate_edge_with_tolerance(tmp_path):
 
     valid, msg = validation.validate_mst(g.n_vertices, g.edges, mst_k)
     assert valid, msg
+
+
+def test_coordinate_edge_outside_tolerance(tmp_path):
+    # Vertices and edges coordinates are far apart; should NOT map with small tolerance
+    verts = [(0.0, 0.0), (10.0, 0.0)]
+    # edge coords are far from vertices
+    coord_edges = [
+        (1.0, 1.0, 2.0, 2.0),
+    ]
+
+    vfile = tmp_path / 'nodes_out.csv'
+    efile = tmp_path / 'edges_out.csv'
+    write_vertices_csv(vfile, verts, with_id=True)
+    write_edges_csv_coords(efile, coord_edges)
+
+    # Use tiny tolerance that should not match
+    g = graph_loader.load_graph(str(vfile), str(efile), coord_tolerance=0.1)
+    # Should have 2 vertices but 0 mapped edges
+    assert g.n_vertices == 2
+    assert g.n_edges == 0
