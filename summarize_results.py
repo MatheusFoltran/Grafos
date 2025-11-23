@@ -1,10 +1,10 @@
 """Summarize experiment CSV results.
 
 Usage:
-  python -m src.summarize_results resultados_experimentos.csv
+  python summarize_results.py [input_csv]
 
 Reads the CSV (expects headers with: graph_name, algorithm, time_seconds, cpu_seconds, memory_mb, peak_memory_mb, mst_weight)
-and writes a summary CSV `summary_results.csv` with mean/std/count grouped by graph_name and algorithm.
+and writes a summary CSV `results/summary_results.csv` with mean/std/count grouped by graph_name and algorithm.
 """
 import csv
 import sys
@@ -12,7 +12,7 @@ from collections import defaultdict
 from statistics import mean, pstdev
 
 
-def summarize(input_csv: str, output_csv: str = 'summary_results.csv'):
+def summarize(input_csv: str, output_csv: str = 'results/summary_results.csv'):
     groups = defaultdict(list)
 
     with open(input_csv, 'r', encoding='utf-8') as f:
@@ -57,7 +57,17 @@ def summarize(input_csv: str, output_csv: str = 'summary_results.csv'):
 
 
 if __name__ == '__main__':
+    # default to canonical results location when no argument is provided
     if len(sys.argv) < 2:
-        print('Usage: python -m src.summarize_results results.csv')
-        sys.exit(1)
-    summarize(sys.argv[1])
+        input_csv = 'results/resultados_experimentos.csv'
+    else:
+        input_csv = sys.argv[1]
+
+    # ensure results directory exists for output
+    try:
+        import os
+        os.makedirs('results', exist_ok=True)
+    except Exception:
+        pass
+
+    summarize(input_csv)

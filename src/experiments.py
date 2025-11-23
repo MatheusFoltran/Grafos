@@ -213,7 +213,10 @@ def main():
     results = run_experiments(valid_configs, repetitions, coord_tolerance=coord_tolerance)
     
     # Salvar resultados
-    output_file = 'resultados_experimentos.csv'
+    # Garantir pasta de resultados e salvar em results/
+    results_dir = project_root / 'results'
+    results_dir.mkdir(parents=True, exist_ok=True)
+    output_file = str(results_dir / 'resultados_experimentos.csv')
     save_results(results, output_file)
     
     # Resumo

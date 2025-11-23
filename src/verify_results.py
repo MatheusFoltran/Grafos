@@ -77,7 +77,8 @@ def main():
         print('No graphs found under Grafos/.')
         return 1
 
-    csv_path = project_root / 'src' / 'resultados_experimentos.csv'
+    # prefer the canonical results location
+    csv_path = project_root / 'results' / 'resultados_experimentos.csv'
     reported = read_results(csv_path)
 
     overall_ok = True
