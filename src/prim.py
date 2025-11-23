@@ -3,7 +3,7 @@ Implementação do algoritmo de Prim para Árvore Geradora Mínima.
 Utiliza heap (min-heap) para seleção eficiente de arestas.
 """
 import heapq
-from typing import List, Tuple, Set
+from typing import List, Tuple
 
 
 def prim(n_vertices: int, adj: List[List[Tuple[int, float]]]) -> Tuple[List[Tuple[int, int, float]], float]:

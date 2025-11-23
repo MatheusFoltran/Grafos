@@ -162,15 +162,21 @@ def load_graph(vertices_file: str, edges_file: str, coord_tolerance: float = 0.0
     # --- Ler arestas e calcular pesos (suporta índices 1-based/0-based ou coordenadas) ---
     with open(edges_file, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
-        header = next(reader, None)
+        first = next(reader, None)
 
-        # decide format by header or by number of columns per row
-        # if header contains non-numeric names like 'source'/'target', treat as indices
-        header_names = []
-        if header:
-            header_names = [h.lower() for h in header]
+        # If the first row looks numeric, treat it as data (many CSVs have no header).
+        if first is None:
+            return graph
 
-        for row in reader:
+        try:
+            # Try to parse the first cell as a float; if that works, include the row
+            float(first[0])
+            rows = [first] + list(reader)
+        except Exception:
+            # First row is likely a header; use the remaining rows
+            rows = list(reader)
+
+        for row in rows:
             if len(row) < 2:
                 continue
 

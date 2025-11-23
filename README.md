@@ -42,19 +42,20 @@ pip install pandas matplotlib seaborn jupyter
 
 ### vertices.csv
 ```csv
+# Exemplo de `vertices.csv` (3 vértices, formato x,y)
 x,y
-1000.5,2000.3
-1500.2,2100.8
-...
+500000.00,4600000.00
+500100.50,4600100.75
+500200.25,4600200.10
 ```
 
 ### edges.csv
 ```csv
+# Exemplo de `edges.csv` (3 arestas usando índices 0-based referenciando a ordem em vertices.csv)
 origem,destino
 0,1
-0,2
 1,2
-...
+0,2
 ```
 
 **Importante:** 

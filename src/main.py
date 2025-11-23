@@ -49,8 +49,11 @@ def run_algorithm(algorithm: str, graph, repetitions: int = 1):
             'algorithm': algorithm,
             'repetition': i + 1,
             'time_seconds': metrics['time_seconds'],
-            'memory_mb': metrics['memory_mb'],
-            'peak_memory_mb': metrics['peak_memory_mb'],
+            'memory_mb': metrics.get('memory_mb'),
+            'peak_memory_mb': metrics.get('peak_memory_mb'),
+            'cpu_seconds': metrics.get('cpu_seconds'),
+            'mem_rss_before_mb': metrics.get('mem_rss_before_mb'),
+            'mem_rss_mb': metrics.get('mem_rss_mb'),
             'mst_weight': total_weight,
             'mst_edges_count': len(mst_edges),
             'valid': valid,
@@ -64,6 +67,14 @@ def run_algorithm(algorithm: str, graph, repetitions: int = 1):
             print(f"  Validação: {msg}")
             print(f"  Tempo: {format_time(metrics['time_seconds'])}")
             print(f"  Memória pico: {format_memory(metrics['peak_memory_mb'])}")
+            # Mostrar RSS do processo se disponível (psutil)
+            mem_rss = metrics.get('mem_rss_mb')
+            mem_rss_before = metrics.get('mem_rss_before_mb')
+            if mem_rss is not None:
+                if mem_rss_before is not None:
+                    print(f"  RSS antes: {format_memory(mem_rss_before)} | RSS depois: {format_memory(mem_rss)}")
+                else:
+                    print(f"  RSS: {format_memory(mem_rss)}")
             
             if not valid:
                 print(f"  ⚠️  ATENÇÃO: MST INVÁLIDA!")

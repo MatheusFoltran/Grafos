@@ -7,7 +7,8 @@ from pathlib import Path
 
 
 def _load_module(name: str, relpath: str):
-    src = Path(__file__).resolve().parents[1] / relpath
+    # Resolve module from the project's `src/` directory to match package layout
+    src = Path(__file__).resolve().parents[1] / 'src' / relpath
     spec = importlib.util.spec_from_file_location(name, str(src))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
