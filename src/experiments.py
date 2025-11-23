@@ -145,19 +145,93 @@ def save_results(results: List[Dict], output_file: str):
 def main():
     """Executa experimentos em grafos configurados.
 
-    Agora o script tenta descobrir automaticamente subpastas em `Grafos/` e localizar
-    os arquivos de nós e arestas (por exemplo `Nodes*.csv` e `Edges*.csv`). Isso evita
-    problemas com nomes/capitalização diferentes (ex: `Nodes1.csv`, `EEdges2.csv`).
+    Descobre automaticamente grafos em subpastas do diretório especificado.
     """
 
-    # Descobrir grafos automaticamente na pasta raiz 'Grafos'
+    parser = argparse.ArgumentParser(
+        description='Executa experimentos automáticos para comparar Prim vs Kruskal.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Exemplos de uso:
+  # Processar todos os grafos no diretório padrão (Grafos/)
+  python experiments.py
+  
+  # Processar grafos específicos
+  python experiments.py --graphs Grafo1 Grafo2
+  
+  # Usar diretório customizado
+  python experiments.py --graph-dir /caminho/para/grafos
+  
+  # Ajustar repetições e tolerância
+  python experiments.py --repetitions 20 --coord-tolerance 0.001
+  
+  # Customizar arquivo de saída
+  python experiments.py --output resultados_custom.csv
+        """
+    )
+    
+    parser.add_argument(
+        '--graph-dir', 
+        type=str,
+        default='Grafos',
+        help='Diretório contendo subpastas de grafos (default: Grafos)'
+    )
+    
+    parser.add_argument(
+        '--graphs', 
+        nargs='*',
+        metavar='NOME',
+        help='Nomes específicos de grafos para processar (ex: Grafo1 Grafo2). '
+             'Se omitido, processa todos os grafos encontrados no diretório.'
+    )
+    
+    parser.add_argument(
+        '--repetitions', '-r', 
+        type=int, 
+        default=10,
+        metavar='N',
+        help='Número de repetições por algoritmo (default: 10)'
+    )
+    
+    parser.add_argument(
+        '--coord-tolerance', '-c',
+        type=float,
+        default=0.0,
+        metavar='TOL',
+        help='Tolerância para matching por coordenadas (default: 0.0)'
+    )
+    
+    parser.add_argument(
+        '--output', '-o',
+        type=str,
+        default='resultados_experimentos.csv',
+        metavar='ARQUIVO',
+        help='Arquivo de saída CSV (default: resultados_experimentos.csv)'
+    )
+    
+    args = parser.parse_args()
+
+    # Descobrir grafos automaticamente na pasta raiz especificada
     project_root = Path(__file__).resolve().parents[1]
-    grafos_dir = project_root / 'Grafos'
+    grafos_dir = project_root / args.graph_dir
+
+    if not grafos_dir.exists():
+        print(f"\n❌ ERRO: Diretório não encontrado: {grafos_dir}")
+        print(f"   Certifique-se que o diretório existe e contém subpastas com grafos.")
+        sys.exit(1)
 
     graph_configs = []
+    
+    print(f"\n🔍 Buscando grafos em: {grafos_dir}")
+    print(f"{'='*70}")
+    
     if grafos_dir.exists() and grafos_dir.is_dir():
         for sub in sorted(grafos_dir.iterdir()):
             if not sub.is_dir():
+                continue
+
+            # Filtrar por nomes específicos se fornecidos via --graphs
+            if args.graphs and sub.name not in args.graphs:
                 continue
 
             # Procurar arquivos de nós e arestas por padrões simples (case-insensitive)
@@ -176,17 +250,22 @@ def main():
                     'vertices': nodes_file,
                     'edges': edges_file
                 })
+                print(f"  ✓ {sub.name}: {Path(nodes_file).name}, {Path(edges_file).name}")
             else:
-                print(f"⚠ Pulando {sub.name}: não foi possível localizar nodes/edges")
+                print(f"  ⚠ Pulando {sub.name}: arquivos de nós/arestas não encontrados")
     else:
-        print(f"ERRO: pasta de grafos não encontrada: {grafos_dir}")
-
-    parser = argparse.ArgumentParser(description='Executa experimentos automáticos sobre grafos na pasta Grafos/.')
-    parser.add_argument('--repetitions', '-r', type=int, default=10, help='Número de repetições por algoritmo (default: 10)')
-    parser.add_argument('--coord-tolerance', '-c', type=float, default=0.0, help='Tolerância para matching por coordenadas (default: 0.0)')
-    args = parser.parse_args()
-    repetitions = args.repetitions
-    coord_tolerance = args.coord_tolerance
+        print(f"❌ ERRO: pasta de grafos não encontrada: {grafos_dir}")
+        sys.exit(1)
+    
+    if not graph_configs:
+        print(f"\n❌ ERRO: Nenhum grafo válido encontrado!")
+        if args.graphs:
+            print(f"   Grafos solicitados: {', '.join(args.graphs)}")
+        print(f"\n💡 Dicas:")
+        print(f"   • Verifique se {grafos_dir} contém subpastas")
+        print(f"   • Cada subpasta deve ter arquivos com 'node'/'nodes' e 'edge'/'edges' no nome")
+        print(f"   • Use --graph-dir para especificar outro diretório")
+        sys.exit(1)
 
     # Validar que arquivos existem
     valid_configs = []
@@ -197,35 +276,36 @@ def main():
             print(f"⚠ Pulando {config['name']}: arquivos não encontrados")
     
     if not valid_configs:
-        print("\nERRO: Nenhum grafo válido encontrado!")
-        print("Ajuste os caminhos em experiments.py")
+        print("\n❌ ERRO: Nenhum grafo válido encontrado após verificação de arquivos!")
         sys.exit(1)
     
     print(f"\n{'='*70}")
-    print(f"INICIANDO EXPERIMENTOS")
+    print(f"CONFIGURAÇÃO DOS EXPERIMENTOS")
     print(f"{'='*70}")
-    print(f"Grafos: {len(valid_configs)}")
-    print(f"Repetições por algoritmo: {repetitions}")
-    print(f"Coord tolerance: {coord_tolerance}")
-    print(f"Total de execuções: {len(valid_configs) * 2 * repetitions}")
+    print(f"Diretório de grafos: {grafos_dir}")
+    print(f"Grafos selecionados: {len(valid_configs)}")
+    for cfg in valid_configs:
+        print(f"  • {cfg['name']}")
+    print(f"Repetições por algoritmo: {args.repetitions}")
+    print(f"Coord tolerance: {args.coord_tolerance}")
+    print(f"Total de execuções: {len(valid_configs) * 2 * args.repetitions}")
+    print(f"Arquivo de saída: {args.output}")
+    print(f"{'='*70}")
     
     # Executar experimentos
-    results = run_experiments(valid_configs, repetitions, coord_tolerance=coord_tolerance)
+    results = run_experiments(valid_configs, args.repetitions, coord_tolerance=args.coord_tolerance)
     
-    # Salvar resultados
-    # Garantir pasta de resultados e salvar em results/
-    results_dir = project_root / 'results'
-    results_dir.mkdir(parents=True, exist_ok=True)
-    output_file = str(results_dir / 'resultados_experimentos.csv')
-    save_results(results, output_file)
+    # Salvar resultados usando o nome customizado
+    save_results(results, args.output)
     
     # Resumo
     print(f"\n{'='*70}")
-    print("RESUMO")
+    print("✅ EXPERIMENTOS CONCLUÍDOS")
     print(f"{'='*70}")
     print(f"Total de execuções: {len(results)}")
     print(f"Grafos processados: {len(valid_configs)}")
-    print(f"\nPróximo passo: use analysis.ipynb para gerar gráficos e análises")
+    print(f"Resultados salvos em: {args.output}")
+    print(f"\n💡 Próximo passo: use analysis.ipynb para gerar gráficos e análises")
     print(f"{'='*70}\n")
 
 
