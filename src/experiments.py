@@ -14,7 +14,7 @@ from validation import validate_mst
 from metrics import measure_performance
 
 
-def run_experiments(graph_configs: List[Dict], repetitions: int = 5, coord_tolerance: float = 0.0) -> List[Dict]:
+def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dict]:
     """
     Executa experimentos em múltiplos grafos.
     
@@ -37,12 +37,13 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5, coord_toler
         print(f"{'='*70}")
         
         try:
-            # Carregar grafo (pode usar coord_tolerance para matching tolerante por coordenadas)
-            graph = load_graph(vertices_file, edges_file, coord_tolerance=coord_tolerance)
+            # Carregar grafo e normalizar para índices 0-based
+            graph = load_graph(vertices_file, edges_file)
+            graph = graph.normalize_to_zero_based()
             print(f"Grafo: {graph.n_vertices} vértices, {graph.n_edges} arestas")
             
             # Executar Prim
-            print(f"\nExecutando Prim ({repetitions} repetições)... (coord_tolerance={coord_tolerance})")
+            print(f"\nExecutando Prim ({repetitions} repetições)...")
             adj = graph.get_adjacency_list()
             
             for rep in range(repetitions):
@@ -74,7 +75,7 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5, coord_toler
                           f"Válida: {'✓' if valid else '✗'}")
             
             # Executar Kruskal
-            print(f"\nExecutando Kruskal ({repetitions} repetições)... (coord_tolerance={coord_tolerance})")
+            print(f"\nExecutando Kruskal ({repetitions} repetições)...")
             
             for rep in range(repetitions):
                 metrics = measure_performance(kruskal, graph.n_vertices, graph.edges)
@@ -287,13 +288,12 @@ Exemplos de uso:
     for cfg in valid_configs:
         print(f"  • {cfg['name']}")
     print(f"Repetições por algoritmo: {args.repetitions}")
-    print(f"Coord tolerance: {args.coord_tolerance}")
     print(f"Total de execuções: {len(valid_configs) * 2 * args.repetitions}")
     print(f"Arquivo de saída: {args.output}")
     print(f"{'='*70}")
     
     # Executar experimentos
-    results = run_experiments(valid_configs, args.repetitions, coord_tolerance=args.coord_tolerance)
+    results = run_experiments(valid_configs, args.repetitions)
     
     # Salvar resultados usando o nome customizado
     save_results(results, args.output)

@@ -88,7 +88,8 @@ def main():
         print(f'Graph: {name}')
         print('='*60)
         try:
-            g = load_graph(cfg['vertices'], cfg['edges'], coord_tolerance=0.0)
+            g = load_graph(cfg['vertices'], cfg['edges'])
+            g = g.normalize_to_zero_based()
         except Exception as e:
             print('  ERROR loading graph:', e)
             overall_ok = False

@@ -170,6 +170,7 @@ def main():
     
     try:
         graph = load_graph(args.vertices, args.edges)
+        graph = graph.normalize_to_zero_based()
     except Exception as e:
         print(f"ERRO ao carregar grafo: {e}")
         sys.exit(1)

@@ -1,291 +1,284 @@
 """
 Módulo para carregar grafos a partir de arquivos CSV.
+
+Formato esperado (conforme especificação UEM):
+- Vértices: CSV com coordenadas UTM (id, x, y) ou (x, y)
+- Arestas: CSV com pares de vértices (u, v)
+- Peso: calculado pela distância euclidiana entre coordenadas
+
+Autor: [Seu Nome/Equipe]
+Disciplina: Algoritmos em Grafos - UEM
+Data: Dezembro 2025
 """
 import csv
 import math
 from typing import List, Tuple, Dict
 
+
 class Graph:
-    """Representação de um grafo ponderado não-direcionado."""
+    """
+    Representação de um grafo ponderado não-direcionado.
+    
+    Estrutura simples para armazenar vértices (com coordenadas) e arestas
+    (com pesos calculados por distância euclidiana).
+    """
     
     def __init__(self):
-        self.vertices: Dict[Tuple[float, float], int] = {}  # (x, y) -> id
-        self.edges: List[Tuple[int, int, float]] = []  # (u, v, peso)
+        """Inicializa grafo vazio."""
+        self.vertices: Dict[int, Tuple[float, float]] = {}  # id -> (x, y)
+        self.edges: List[Tuple[int, int, float]] = []        # (u, v, peso)
         self.n_vertices = 0
         self.n_edges = 0
     
-    def add_vertex(self, x: float, y: float) -> int:
-        """Adiciona um vértice e retorna seu ID."""
-        coord = (x, y)
-        if coord not in self.vertices:
-            self.vertices[coord] = self.n_vertices
+    def add_vertex(self, vertex_id: int, x: float, y: float):
+        """
+        Adiciona um vértice ao grafo.
+        
+        Args:
+            vertex_id: identificador do vértice
+            x, y: coordenadas UTM
+        """
+        if vertex_id not in self.vertices:
+            self.vertices[vertex_id] = (x, y)
             self.n_vertices += 1
-        return self.vertices[coord]
     
     def add_edge(self, u: int, v: int, weight: float):
-        """Adiciona uma aresta ao grafo."""
+        """
+        Adiciona uma aresta ao grafo.
+        
+        Args:
+            u, v: vértices conectados
+            weight: peso da aresta (distância euclidiana)
+        """
         self.edges.append((u, v, weight))
         self.n_edges += 1
     
     def get_adjacency_list(self) -> List[List[Tuple[int, float]]]:
-        """Retorna lista de adjacências: adj[u] = [(v, peso), ...]"""
-        adj = [[] for _ in range(self.n_vertices)]
-        for u, v, w in self.edges:
-            adj[u].append((v, w))
-            adj[v].append((u, w))
+        """
+        Retorna lista de adjacências para uso no algoritmo de Prim.
+        
+        Returns:
+            adj[u] = [(v1, peso1), (v2, peso2), ...]
+        """
+        # Encontrar ID máximo para dimensionar a lista
+        if not self.vertices:
+            return []
+        
+        max_id = max(self.vertices.keys())
+        adj = [[] for _ in range(max_id + 1)]
+        
+        # Adicionar arestas (grafo não-direcionado)
+        for u, v, weight in self.edges:
+            adj[u].append((v, weight))
+            adj[v].append((u, weight))
+        
         return adj
+    
+    def get_vertex_mapping(self) -> Dict[int, int]:
+        """
+        Retorna mapeamento de IDs originais para índices 0-based contíguos.
+        
+        Útil quando IDs dos vértices não são contíguos (ex: 1, 5, 10, ...).
+        
+        Returns:
+            Dicionário {id_original: índice_contíguo}
+        """
+        return {vid: idx for idx, vid in enumerate(sorted(self.vertices.keys()))}
+    
+    def normalize_to_zero_based(self) -> 'Graph':
+        """
+        Retorna novo grafo com IDs de vértices normalizados para 0-based contíguo.
+        
+        Necessário para algoritmos que assumem vértices 0, 1, 2, ..., n-1.
+        
+        Returns:
+            Novo objeto Graph com IDs normalizados
+        """
+        mapping = self.get_vertex_mapping()
+        
+        new_graph = Graph()
+        
+        # Adicionar vértices com novos IDs
+        for old_id, (x, y) in self.vertices.items():
+            new_id = mapping[old_id]
+            new_graph.add_vertex(new_id, x, y)
+        
+        # Adicionar arestas com novos IDs
+        for u, v, weight in self.edges:
+            new_u = mapping[u]
+            new_v = mapping[v]
+            new_graph.add_edge(new_u, new_v, weight)
+        
+        return new_graph
 
 
 def euclidean_distance(x1: float, y1: float, x2: float, y2: float) -> float:
-    """Calcula distância euclidiana entre dois pontos."""
+    """
+    Calcula distância euclidiana entre dois pontos.
+    
+    Fórmula: d = √[(x₁-x₂)² + (y₁-y₂)²]
+    
+    Args:
+        x1, y1: coordenadas do primeiro ponto
+        x2, y2: coordenadas do segundo ponto
+    
+    Returns:
+        Distância euclidiana
+    """
     return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 
-def load_graph(vertices_file: str, edges_file: str, coord_tolerance: float = 0.0) -> Graph:
+def load_graph(vertices_file: str, edges_file: str) -> Graph:
     """
-    Carrega um grafo a partir de arquivos CSV.
-
-    Suporta formatos encontrados no repositório:
-    - `Nodes*.csv` com colunas (id, x, y) ou (x, y) (id pode ser 1-based)
-    - `Edges*.csv` com colunas (source, target) contendo índices (1-based ou 0-based)
-      OU com 4 colunas representando coordenadas (x1, y1, x2, y2).
-
-    Retorna um objeto `Graph` com índices internos 0-based.
-
+    Carrega grafo a partir de arquivos CSV.
+    
+    Formato esperado (conforme especificação do trabalho):
+    
+    **Vértices (vertices.csv):**
+    - Com header: id,x,y
+    - Sem header: id,x,y (primeira linha de dados)
+    - Coordenadas em sistema UTM (Universal Transverse Mercator)
+    
+    **Arestas (edges.csv):**
+    - Com header: source,target ou u,v
+    - Sem header: u,v (primeira linha de dados)
+    - IDs devem corresponder aos IDs dos vértices
+    
+    **Peso das arestas:**
+    Calculado automaticamente pela distância euclidiana entre vértices:
+    d(vᵢ, vⱼ) = √[(xᵢ-xⱼ)² + (yᵢ-yⱼ)²]
+    
     Args:
-        coord_tolerance: se > 0, tenta mapear arestas definidas por coordenadas
-            para vértices pelo vizinho mais próximo dentro desta tolerância
-            (unidades da mesma escala das coordenadas). O loader emprega um
-            spatial-hash grid interno (sem dependências externas) para
-            reduzir a busca a células vizinhas.
+        vertices_file: caminho para CSV de vértices
+        edges_file: caminho para CSV de arestas
+    
+    Returns:
+        Objeto Graph com vértices e arestas carregados
+    
+    Raises:
+        FileNotFoundError: se arquivos não existirem
+        ValueError: se formato CSV for inválido
+    
+    Exemplo:
+        >>> graph = load_graph('grafos/cidade1/vertices.csv', 
+        ...                    'grafos/cidade1/edges.csv')
+        >>> print(f"Vértices: {graph.n_vertices}, Arestas: {graph.n_edges}")
     """
     graph = Graph()
-
-    # Mapeamentos auxiliares
-    id_to_index = {}        # original id (from file) -> internal index (0-based)
-    coords = []             # list of (x, y) indexed by internal index
-    coord_to_index = {}     # rounded coordinate -> internal index (for coordinate-based edges)
-
-    # --- Ler vértices (suporta header com 'id' ou apenas x,y) ---
+    
+    # ===== CARREGAR VÉRTICES =====
     with open(vertices_file, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
-        header = next(reader, None)
-
-        # Detectar se primeiro campo é um header textual
-        has_id_col = False
-        if header is not None and any(h.lower() in ('id', 'idx') for h in header):
-            # temos uma linha de cabeçalho que inclui 'id'
-            has_id_col = True
-        else:
-            # Se header parece numérico, tratamos como primeira linha de dados
+        
+        # Ler primeira linha
+        first_row = next(reader, None)
+        if first_row is None:
+            raise ValueError(f"Arquivo de vértices vazio: {vertices_file}")
+        
+        # Detectar se é header (texto) ou dados (números)
+        is_header = False
+        try:
+            # Tentar converter para números
+            int(first_row[0])
+            float(first_row[1])
+            float(first_row[2])
+        except (ValueError, IndexError):
+            # Primeira linha é header
+            is_header = True
+        
+        # Processar primeira linha se for dados
+        if not is_header:
             try:
-                # tentar converter primeira campo para float para checar
-                if header is not None:
-                    float(header[0])
-                    # header é na verdade uma linha de dados
-                    # processá-la como primeira linha
-                    row0 = header
-                    header = None
-                    # process row0 abaixo
-                    rows = [row0] + list(reader)
-                else:
-                    rows = list(reader)
-            except Exception:
-                rows = list(reader)
-
-        if has_id_col:
-            # Reabrir e usar DictReader para robustez
-            f.seek(0)
-            dreader = csv.DictReader(f)
-            for row in dreader:
-                # Expect columns like 'id', 'x', 'y' (nomes podem variar)
-                try:
-                    orig_id = int(row.get('id') or row.get('ID') or row.get('Id'))
-                except Exception:
-                    # fallback: try first column
-                    try:
-                        orig_id = int(next(iter(row.values())))
-                    except Exception:
-                        continue
-
-                # localizar x,y
-                x = float(row.get('x') or row.get('X') or row.get('lon') or row.get('xc') or list(row.values())[1])
-                y = float(row.get('y') or row.get('Y') or row.get('lat') or row.get('yc') or list(row.values())[2])
-
-                internal = len(coords)
-                id_to_index[orig_id] = internal
-                coords.append((x, y))
-                coord_to_index[(round(x, 6), round(y, 6))] = internal
-        else:
-            # header is either None or data; we already collected rows
-            if 'rows' not in locals():
-                rows = list(reader)
-
-            for row in rows:
-                if len(row) < 2:
-                    continue
-                try:
-                    x = float(row[0])
-                    y = float(row[1])
-                except Exception:
-                    continue
-
-                internal = len(coords)
-                coords.append((x, y))
-                coord_to_index[(round(x, 6), round(y, 6))] = internal
-
-            # Atualizar o objeto graph com os vértices lidos (importante para get_adjacency_list)
-            for idx, (x, y) in enumerate(coords):
-                # usar coordenadas reais como chave para permitir buscas futuras
-                graph.vertices[(x, y)] = idx
-            graph.n_vertices = len(coords)
-
-    # Caso o branch com 'id' tenha sido tomado acima, garantir que graph também seja populado
+                vertex_id = int(first_row[0])
+                x = float(first_row[1])
+                y = float(first_row[2])
+                graph.add_vertex(vertex_id, x, y)
+            except (ValueError, IndexError) as e:
+                raise ValueError(f"Formato inválido no arquivo de vértices: {e}")
+        
+        # Processar linhas restantes
+        for row in reader:
+            if len(row) < 3:
+                continue  # Pular linhas vazias ou incompletas
+            
+            try:
+                vertex_id = int(row[0])
+                x = float(row[1])
+                y = float(row[2])
+                graph.add_vertex(vertex_id, x, y)
+            except (ValueError, IndexError):
+                # Pular linha com formato inválido
+                continue
+    
     if graph.n_vertices == 0:
-        for idx, (x, y) in enumerate(coords):
-            graph.vertices[(x, y)] = idx
-        graph.n_vertices = len(coords)
-
-    # Preparar estrutura para deduplicação de arestas e busca tolerante por coordenadas
-    seen_edges = set()  # store (min(u,v), max(u,v)) to avoid duplicates
-    # Usamos um spatial-hash grid como fallback para buscas por coordenadas
-    grid = None
-    cell_size = None
-    if coord_tolerance and coord_tolerance > 0 and coords:
-        cell_size = float(coord_tolerance)
-        grid = {}
-        for i, (vx, vy) in enumerate(coords):
-            cell_x = int(math.floor(vx / cell_size))
-            cell_y = int(math.floor(vy / cell_size))
-            grid.setdefault((cell_x, cell_y), []).append(i)
-
-    # --- Ler arestas e calcular pesos (suporta índices 1-based/0-based ou coordenadas) ---
+        raise ValueError(f"Nenhum vértice válido encontrado em: {vertices_file}")
+    
+    # ===== CARREGAR ARESTAS E CALCULAR PESOS =====
+    # Set para deduplicar arestas (grafo não-direcionado)
+    seen_edges = set()
+    
     with open(edges_file, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
-        first = next(reader, None)
-
-        # If the first row looks numeric, treat it as data (many CSVs have no header).
-        if first is None:
+        
+        # Ler primeira linha
+        first_row = next(reader, None)
+        if first_row is None:
+            # Grafo sem arestas (vértices isolados) é válido
             return graph
-
+        
+        # Detectar se é header
+        is_header = False
         try:
-            # Try to parse the first cell as a float; if that works, include the row
-            float(first[0])
-            rows = [first] + list(reader)
-        except Exception:
-            # First row is likely a header; use the remaining rows
-            rows = list(reader)
-
-        for row in rows:
+            int(first_row[0])
+            int(first_row[1])
+        except (ValueError, IndexError):
+            is_header = True
+        
+        # Processar primeira linha se for dados
+        if not is_header:
+            try:
+                u = int(first_row[0])
+                v = int(first_row[1])
+                
+                # Validar que vértices existem
+                if u in graph.vertices and v in graph.vertices:
+                    # Deduplicar: normalizar ordem (menor, maior)
+                    edge_key = (min(u, v), max(u, v))
+                    if edge_key not in seen_edges:
+                        x1, y1 = graph.vertices[u]
+                        x2, y2 = graph.vertices[v]
+                        weight = euclidean_distance(x1, y1, x2, y2)
+                        graph.add_edge(u, v, weight)
+                        seen_edges.add(edge_key)
+            except (ValueError, IndexError, KeyError):
+                pass  # Pular aresta inválida
+        
+        # Processar linhas restantes
+        for row in reader:
             if len(row) < 2:
                 continue
-
-            # Case 1: two integer-like columns -> indices
-            if len(row) >= 2:
-                try:
-                    u_raw = int(row[0])
-                    v_raw = int(row[1])
-                    # Map original id -> internal index if present
-                    if u_raw in id_to_index:
-                        u = id_to_index[u_raw]
-                    else:
-                        # assume 1-based indices (common in shapefile exports)
-                        u = u_raw - 1
-
-                    if v_raw in id_to_index:
-                        v = id_to_index[v_raw]
-                    else:
-                        v = v_raw - 1
-
-                    # Validate indices and ignore self-loops and duplicates
-                    if 0 <= u < len(coords) and 0 <= v < len(coords) and u != v:
-                        a, b = (u, v) if u <= v else (v, u)
-                        if (a, b) in seen_edges:
-                            # duplicate — pular
-                            pass
-                        else:
-                            x1, y1 = coords[u]
-                            x2, y2 = coords[v]
-                            weight = euclidean_distance(x1, y1, x2, y2)
-                            graph.add_edge(u, v, weight)
-                            seen_edges.add((a, b))
-                    continue
-                except Exception:
-                    # not integers — try coordinate-based edge
-                    pass
-
-            # Case 2: coordinate pairs (x1,y1,x2,y2)
-            # Accept rows with 4 numeric columns
-            if len(row) >= 4:
-                try:
-                    x1 = float(row[0]); y1 = float(row[1]); x2 = float(row[2]); y2 = float(row[3])
-                    # Tentar mapear coordenadas para índices de vértices com tolerância
-                    u = v = None
-                    # usar spatial-hash grid (se construído) para procurar vizinhos próximos
-                    if coord_tolerance and coord_tolerance > 0:
-                        best_d1 = float('inf'); best_i1 = None
-                        best_d2 = float('inf'); best_i2 = None
-                        if grid is not None and cell_size is not None:
-                            # procurar nas células vizinhas (3x3)
-                            cx1 = int(math.floor(x1 / cell_size)); cy1 = int(math.floor(y1 / cell_size))
-                            cx2 = int(math.floor(x2 / cell_size)); cy2 = int(math.floor(y2 / cell_size))
-                            candidates1 = []
-                            candidates2 = []
-                            for dx in (-1, 0, 1):
-                                for dy in (-1, 0, 1):
-                                    candidates1.extend(grid.get((cx1 + dx, cy1 + dy), []))
-                                    candidates2.extend(grid.get((cx2 + dx, cy2 + dy), []))
-                            # checar candidatos
-                            for i in candidates1:
-                                cx, cy = coords[i]
-                                d1 = euclidean_distance(x1, y1, cx, cy)
-                                if d1 < best_d1:
-                                    best_d1 = d1; best_i1 = i
-                            for i in candidates2:
-                                cx, cy = coords[i]
-                                d2 = euclidean_distance(x2, y2, cx, cy)
-                                if d2 < best_d2:
-                                    best_d2 = d2; best_i2 = i
-                        else:
-                            # grid não disponível -> fallback completo (linear)
-                            for i, (cx, cy) in enumerate(coords):
-                                d1 = euclidean_distance(x1, y1, cx, cy)
-                                if d1 < best_d1:
-                                    best_d1 = d1; best_i1 = i
-                                d2 = euclidean_distance(x2, y2, cx, cy)
-                                if d2 < best_d2:
-                                    best_d2 = d2; best_i2 = i
-                        if best_d1 <= coord_tolerance:
-                            u = best_i1
-                        if best_d2 <= coord_tolerance:
-                            v = best_i2
-
-                    # Se tolerância não encontrada ou coord_tolerance == 0, usar mapeamento por key exato
-                    if u is None or v is None:
-                        key1 = (round(x1, 6), round(y1, 6))
-                        key2 = (round(x2, 6), round(y2, 6))
-                        if key1 in coord_to_index:
-                            u = coord_to_index[key1]
-                        if key2 in coord_to_index:
-                            v = coord_to_index[key2]
-
-                    if u is not None and v is not None and u != v:
-                        a, b = (u, v) if u <= v else (v, u)
-                        if (a, b) in seen_edges:
-                            pass
-                        else:
-                            weight = euclidean_distance(x1, y1, x2, y2)
-                            graph.add_edge(u, v, weight)
-                            seen_edges.add((a, b))
-                except Exception:
-                    continue
-
+            
+            try:
+                u = int(row[0])
+                v = int(row[1])
+                
+                # Validar que vértices existem
+                if u not in graph.vertices or v not in graph.vertices:
+                    continue  # Pular aresta com vértice inexistente
+                
+                # Deduplicar: normalizar ordem (menor, maior)
+                edge_key = (min(u, v), max(u, v))
+                if edge_key in seen_edges:
+                    continue  # Aresta duplicada
+                
+                # Calcular peso pela distância euclidiana
+                x1, y1 = graph.vertices[u]
+                x2, y2 = graph.vertices[v]
+                weight = euclidean_distance(x1, y1, x2, y2)
+                
+                graph.add_edge(u, v, weight)
+                seen_edges.add(edge_key)
+            except (ValueError, IndexError, KeyError):
+                continue  # Pular aresta inválida
+    
     return graph
-
-
-if __name__ == "__main__":
-    # Teste básico
-    print("Testando carregamento de grafo...")
-    # Descomente e ajuste os caminhos para testar:
-    # graph = load_graph("grafos/grafo1/vertices.csv", "grafos/grafo1/edges.csv")
-    # print(f"Vértices: {graph.n_vertices}, Arestas: {graph.n_edges}")
