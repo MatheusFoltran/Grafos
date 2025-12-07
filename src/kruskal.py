@@ -74,6 +74,13 @@ def kruskal(n_vertices: int, edges: List[Tuple[int, int, float]]) -> Tuple[List[
     """
     Algoritmo de Kruskal para encontrar a Árvore Geradora Mínima (MST).
     
+    Utiliza Union-Find com:
+    - Union by rank (união pela menor altura)
+    - Path compression (compressão de caminho)
+    
+    Versão otimizada: operações Union-Find inline para reduzir overhead
+    de chamadas de função em Python.
+    
     Args:
         n_vertices: número de vértices no grafo
         edges: lista de arestas (u, v, peso)
@@ -89,22 +96,55 @@ def kruskal(n_vertices: int, edges: List[Tuple[int, int, float]]) -> Tuple[List[
     # Ordenar arestas por peso (crescente)
     sorted_edges = sorted(edges, key=lambda e: e[2])
     
-    # Inicializar Union-Find
-    uf = UnionFind(n_vertices)
+    # Inicializar Union-Find (variáveis locais para performance)
+    parent = list(range(n_vertices))
+    rank = [0] * n_vertices
     
     mst_edges = []
     total_weight = 0.0
+    target_edges = n_vertices - 1
     
     # Processar arestas em ordem crescente de peso
     for u, v, weight in sorted_edges:
-        # Se u e v estão em componentes diferentes, adicionar aresta
-        if uf.union(u, v):
+        # ===== FIND com path compression para u (inline) =====
+        root_u = u
+        while parent[root_u] != root_u:
+            root_u = parent[root_u]
+        # Path compression
+        curr = u
+        while curr != root_u:
+            next_curr = parent[curr]
+            parent[curr] = root_u
+            curr = next_curr
+        
+        # ===== FIND com path compression para v (inline) =====
+        root_v = v
+        while parent[root_v] != root_v:
+            root_v = parent[root_v]
+        # Path compression
+        curr = v
+        while curr != root_v:
+            next_curr = parent[curr]
+            parent[curr] = root_v
+            curr = next_curr
+        
+        # ===== UNION by rank (inline) =====
+        if root_u != root_v:
+            # União pela menor altura (rank)
+            if rank[root_u] < rank[root_v]:
+                parent[root_u] = root_v
+            elif rank[root_u] > rank[root_v]:
+                parent[root_v] = root_u
+            else:
+                parent[root_v] = root_u
+                rank[root_u] += 1
+            
+            # Adicionar aresta à MST
             mst_edges.append((u, v, weight))
             total_weight += weight
             
             # Otimização: se temos n-1 arestas em grafo conexo, parar
-            # (para grafos desconexos, continuamos até processar todas)
-            if len(mst_edges) == n_vertices - 1:
+            if len(mst_edges) == target_edges:
                 break
     
     return mst_edges, total_weight
