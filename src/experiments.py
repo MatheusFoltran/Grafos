@@ -254,9 +254,6 @@ Exemplos de uso:
                 print(f"  - {sub.name}: {Path(nodes_file).name}, {Path(edges_file).name}")
             else:
                 print(f"  AVISO: Pulando {sub.name}: arquivos de nós/arestas não encontrados")
-        else:
-            print(f"ERRO: pasta de grafos não encontrada: {grafos_dir}")
-            sys.exit(1)
     
     if not graph_configs:
         print(f"\nERRO: Nenhum grafo válido encontrado!")
