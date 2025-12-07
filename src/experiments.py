@@ -72,7 +72,7 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
                 if rep == 0:
                     print(f"  Peso MST: {total_weight:.2f}, "
                           f"Tempo: {metrics['time_seconds']*1000:.2f}ms, "
-                          f"Válida: {'✓' if valid else '✗'}")
+                          f"Válida: {'Sim' if valid else 'Não'}")
             
             # Executar Kruskal
             print(f"\nExecutando Kruskal ({repetitions} repetições)...")
@@ -103,7 +103,7 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
                 if rep == 0:
                     print(f"  Peso MST: {total_weight:.2f}, "
                           f"Tempo: {metrics['time_seconds']*1000:.2f}ms, "
-                          f"Válida: {'✓' if valid else '✗'}")
+                          f"Válida: {'Sim' if valid else 'Não'}")
         
         except Exception as e:
             print(f"ERRO ao processar {name}: {e}")
@@ -141,7 +141,7 @@ def save_results(results: List[Dict], output_file: str):
         writer.writeheader()
         writer.writerows(results)
     
-    print(f"\n✓ Resultados salvos em: {output_file}")
+    print(f"\nResultados salvos em: {output_file}")
 
 def main():
     """Executa experimentos em grafos configurados.
@@ -251,12 +251,12 @@ Exemplos de uso:
                     'vertices': nodes_file,
                     'edges': edges_file
                 })
-                print(f"  ✓ {sub.name}: {Path(nodes_file).name}, {Path(edges_file).name}")
+                print(f"  - {sub.name}: {Path(nodes_file).name}, {Path(edges_file).name}")
             else:
-                print(f"  ⚠ Pulando {sub.name}: arquivos de nós/arestas não encontrados")
-    else:
-        print(f"ERRO: pasta de grafos não encontrada: {grafos_dir}")
-        sys.exit(1)
+                print(f"  AVISO: Pulando {sub.name}: arquivos de nós/arestas não encontrados")
+        else:
+            print(f"ERRO: pasta de grafos não encontrada: {grafos_dir}")
+            sys.exit(1)
     
     if not graph_configs:
         print(f"\nERRO: Nenhum grafo válido encontrado!")
@@ -274,7 +274,7 @@ Exemplos de uso:
         if Path(config['vertices']).exists() and Path(config['edges']).exists():
             valid_configs.append(config)
         else:
-            print(f"⚠ Pulando {config['name']}: arquivos não encontrados")
+            print(f"AVISO: Pulando {config['name']}: arquivos não encontrados")
     
     if not valid_configs:
         print("\nERRO: Nenhum grafo válido encontrado após verificação de arquivos!")

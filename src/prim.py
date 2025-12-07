@@ -16,9 +16,9 @@ Disciplina: Algoritmos em Grafos - UEM
 Data: Dezembro 2025
 
 Conformidade com requisitos:
-- ✅ Usa heap (heapq - biblioteca padrão Python)
-- ✅ Sem bibliotecas de grafos
-- ✅ Trata grafos desconexos
+- Usa heap (`heapq` - biblioteca padrão Python)
+- Sem bibliotecas de grafos
+- Trata grafos desconexos
 """
 import heapq
 from typing import List, Tuple
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     print(f"Arestas: {len(mst)} (esperado: {n-1})")
     
     validation = validate_mst(n, adj, mst)
-    print(f"Validação: {'✓ PASSOU' if validation['is_valid'] else '✗ FALHOU'}")
+    print(f"Validação: {'PASSOU' if validation['is_valid'] else 'FALHOU'}")
     
     # Teste 2: Grafo desconexo
     print("\n[Teste 2] Grafo desconexo (2 componentes)")
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     print(f"Arestas: {len(mst)}")
     
     validation = validate_mst(n, adj, mst)
-    print(f"Validação: {'✓ PASSOU' if validation['is_valid'] else '✗ FALHOU'}")
+    print(f"Validação: {'PASSOU' if validation['is_valid'] else 'FALHOU'}")
     print(f"Componentes conexas: {validation['info']['n_components']}")
     
     # Teste 3: Comparação com versão anterior
@@ -274,9 +274,9 @@ if __name__ == "__main__":
     print(f"MST arestas: {len(mst_large)}")
     
     print("\n" + "=" * 70)
-    print("✓ TODOS OS TESTES CONCLUÍDOS")
+    print("TODOS OS TESTES CONCLUÍDOS")
     print("=" * 70)
-    print("\n💡 Esta versão usa heap de VÉRTICES ao invés de heap de ARESTAS")
+    print("\nNota: Esta versão usa heap de VÉRTICES ao invés de heap de ARESTAS")
     print("   Vantagens:")
     print("   • Heap menor: O(V) vs O(E)")
     print("   • Menos operações: O(V log V) vs O(E log E)")

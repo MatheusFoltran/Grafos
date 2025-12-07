@@ -279,7 +279,7 @@ if __name__ == "__main__":
     
     # Validação
     validation = validate_mst(n, edges, mst)
-    print(f"Validação: {'✓ PASSOU' if validation['is_valid'] else '✗ FALHOU'}")
+    print(f"Validação: {'PASSOU' if validation['is_valid'] else 'FALHOU'}")
     if validation['errors']:
         print(f"Erros: {validation['errors']}")
     if validation['warnings']:
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     print(f"Arestas: {len(mst)} (esperado para MSF: {len(edges)})")
     
     validation = validate_mst(n, edges, mst)
-    print(f"Validação: {'✓ PASSOU' if validation['is_valid'] else '✗ FALHOU'}")
+    print(f"Validação: {'PASSOU' if validation['is_valid'] else 'FALHOU'}")
     print(f"Componentes conexas: {validation['info']['n_components']}")
     
     # Teste 3: Union-Find standalone
