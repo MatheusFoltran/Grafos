@@ -205,9 +205,9 @@ Exemplos de uso:
     parser.add_argument(
         '--output', '-o',
         type=str,
-        default='resultados_experimentos.csv',
+        default='results/resultados_experimentos.csv',
         metavar='ARQUIVO',
-        help='Arquivo de saída CSV (default: resultados_experimentos.csv)'
+        help='Arquivo de saída CSV (default: results/resultados_experimentos.csv)'
     )
     
     args = parser.parse_args()
@@ -217,13 +217,13 @@ Exemplos de uso:
     grafos_dir = project_root / args.graph_dir
 
     if not grafos_dir.exists():
-        print(f"\n❌ ERRO: Diretório não encontrado: {grafos_dir}")
+        print(f"\nERRO: Diretório não encontrado: {grafos_dir}")
         print(f"   Certifique-se que o diretório existe e contém subpastas com grafos.")
         sys.exit(1)
 
     graph_configs = []
     
-    print(f"\n🔍 Buscando grafos em: {grafos_dir}")
+    print(f"\nBuscando grafos em: {grafos_dir}")
     print(f"{'='*70}")
     
     if grafos_dir.exists() and grafos_dir.is_dir():
@@ -255,14 +255,14 @@ Exemplos de uso:
             else:
                 print(f"  ⚠ Pulando {sub.name}: arquivos de nós/arestas não encontrados")
     else:
-        print(f"❌ ERRO: pasta de grafos não encontrada: {grafos_dir}")
+        print(f"ERRO: pasta de grafos não encontrada: {grafos_dir}")
         sys.exit(1)
     
     if not graph_configs:
-        print(f"\n❌ ERRO: Nenhum grafo válido encontrado!")
+        print(f"\nERRO: Nenhum grafo válido encontrado!")
         if args.graphs:
             print(f"   Grafos solicitados: {', '.join(args.graphs)}")
-        print(f"\n💡 Dicas:")
+        print(f"\nDicas:")
         print(f"   • Verifique se {grafos_dir} contém subpastas")
         print(f"   • Cada subpasta deve ter arquivos com 'node'/'nodes' e 'edge'/'edges' no nome")
         print(f"   • Use --graph-dir para especificar outro diretório")
@@ -277,7 +277,7 @@ Exemplos de uso:
             print(f"⚠ Pulando {config['name']}: arquivos não encontrados")
     
     if not valid_configs:
-        print("\n❌ ERRO: Nenhum grafo válido encontrado após verificação de arquivos!")
+        print("\nERRO: Nenhum grafo válido encontrado após verificação de arquivos!")
         sys.exit(1)
     
     print(f"\n{'='*70}")
@@ -300,12 +300,12 @@ Exemplos de uso:
     
     # Resumo
     print(f"\n{'='*70}")
-    print("✅ EXPERIMENTOS CONCLUÍDOS")
+    print("EXPERIMENTOS CONCLUÍDOS")
     print(f"{'='*70}")
     print(f"Total de execuções: {len(results)}")
     print(f"Grafos processados: {len(valid_configs)}")
     print(f"Resultados salvos em: {args.output}")
-    print(f"\n💡 Próximo passo: use analysis.ipynb para gerar gráficos e análises")
+    print(f"\nPróximo passo: use analysis.ipynb para gerar gráficos e análises")
     print(f"{'='*70}\n")
 
 

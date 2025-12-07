@@ -1,5 +1,2 @@
-Fixes.txt
-smoke_results.csv
-resultados_experimentos.csv
-summary_results.csv
-.vscode
+.venv/
+__pycache__/

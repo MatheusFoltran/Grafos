@@ -128,7 +128,7 @@ def validate_mst(n_vertices: int,
             return False, (f"Componente {idx} possui {k} vértices e deveria ter "
                           f"{expected} arestas na MST, mas possui {actual}")
 
-    return True, "✓ MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)"
+    return True, "MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)"
 
 
 # Testes unitários
@@ -189,5 +189,5 @@ if __name__ == "__main__":
     assert valid, "Deveria ser válida!"
     
     print("\n" + "="*70)
-    print("✓ TODOS OS TESTES PASSARAM!")
+    print("TODOS OS TESTES PASSARAM!")
     print("="*70)

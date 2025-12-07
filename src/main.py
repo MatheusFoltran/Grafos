@@ -77,7 +77,7 @@ def run_algorithm(algorithm: str, graph, repetitions: int = 1):
                     print(f"  RSS: {format_memory(mem_rss)}")
             
             if not valid:
-                print(f"  ⚠️  ATENÇÃO: MST INVÁLIDA!")
+                print(f"ATENÇÃO: MST INVÁLIDA!")
     
     return results
 
@@ -119,9 +119,9 @@ def print_comparison(prim_results, kruskal_results):
     
     weight_diff = abs(prim_weight - kruskal_weight)
     if weight_diff < 0.01:
-        print(f"  ✓ Pesos idênticos (diff: {weight_diff:.6f})")
+        print(f"Pesos idênticos (diff: {weight_diff:.6f})")
     else:
-        print(f"  ⚠ ATENÇÃO: Pesos diferentes! (diff: {weight_diff:.2f})")
+        print(f"ATENÇÃO: Pesos diferentes! (diff: {weight_diff:.2f})")
     
     print("="*70 + "\n")
 
@@ -133,7 +133,7 @@ def main():
     parser.add_argument(
         '--vertices',
         required=True,
-        help='Arquivo CSV com vértices (coordenadas)'
+        help='Arquivo CSV com vértices'
     )
     parser.add_argument(
         '--edges',

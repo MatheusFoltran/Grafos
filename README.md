@@ -11,20 +11,22 @@ Implementação e comparação dos algoritmos de Prim e Kruskal para cálculo de
 │   ├── graph_loader.py      # Carregamento de grafos CSV
 │   ├── prim.py              # Implementação do Prim
 │   ├── kruskal.py           # Implementação do Kruskal 
+│   ├── validation.py        # Validação de MST
 │   ├── metrics.py           # Medição de tempo e memória
 │   ├── experiments.py       # Experimentos automatizados
-│   └── analysis.ipynb       # Análise e visualização (TODO)
+│   └── analysis.ipynb       # Análise e visualização
 │
-├── grafos/
-│   ├── grafo1/
-│   │   ├── vertices.csv
-│   │   └── edges.csv
-│   ├── grafo2/
-│   │   ├── vertices.csv
-│   │   └── edges.csv
+├── Grafos/
+│   ├── Grafo1/
+│   │   ├── Nodes1.csv
+│   │   └── Edges1.csv
+│   ├── Grafo2/
+│   │   ├── Nodes2.csv
+│   │   └── Edges2.csv
 │   └── ...
 │
-├── resultados_experimentos.csv  # Resultados salvos
+├── results/
+│   └── resultados_experimentos.csv  # Resultados salvos
 └── README.md
 ```
 
@@ -32,70 +34,109 @@ Implementação e comparação dos algoritmos de Prim e Kruskal para cálculo de
 
 - Python 3.8+
 - Bibliotecas padrão: `heapq`, `csv`, `math`, `time`, `tracemalloc`
-- Opcional: `pandas`, `matplotlib`, `seaborn` (para análise)
+
+### Instalação de Dependências
 
 ```bash
-pip install pandas matplotlib seaborn jupyter
+# Instalar dependências opcionais (recomendado)
+pip install -r requirements.txt
 ```
+
+**Dependências opcionais:**
+- `psutil` - Medição de RSS (memória total do processo) - **já implementado**
+- `pandas`, `matplotlib`, `seaborn` - Análise e visualização de resultados
+- `jupyter` - Para rodar o notebook de análise
+
+**Nota:** O projeto funciona sem essas dependências, mas com funcionalidade reduzida:
+- Sem `psutil`: apenas medição via `tracemalloc` (heap Python)
+- Sem pandas/matplotlib: não é possível gerar gráficos no notebook
 
 ## 📊 Formato dos Arquivos CSV
 
-### vertices.csv
+### Nodes*.csv (Vértices)
 ```csv
-# Exemplo de `vertices.csv` (3 vértices, formato x,y)
-x,y
-500000.00,4600000.00
-500100.50,4600100.75
-500200.25,4600200.10
+# Formato: id,x,y (coordenadas UTM)
+id,x,y
+1,673571.91,3796789.73
+2,673532.44,3797021.58
+3,673725.67,3796734.16
 ```
 
-### edges.csv
+### Edges*.csv (Arestas)
 ```csv
-# Exemplo de `edges.csv` (3 arestas usando índices 0-based referenciando a ordem em vertices.csv)
-origem,destino
-0,1
+# Formato: source,target (IDs dos vértices)
+source,target
 1,2
-0,2
+2,3
+1,3
 ```
 
 **Importante:** 
-- Vértices são identificados por suas coordenadas (x, y)
-- Arestas usam índices (0, 1, 2, ...) correspondentes à ordem no vertices.csv
-- Peso das arestas = distância euclidiana calculada automaticamente
+- Vértices têm ID numérico + coordenadas UTM (Universal Transverse Mercator)
+- Arestas usam os IDs dos vértices (podem começar em 1, são normalizados internamente)
+- Peso das arestas = distância euclidiana calculada automaticamente: d = √[(x₁-x₂)² + (y₁-y₂)²]
 
 ## 🚀 Uso
 
-### Execução Individual
+### Execução Individual (CLI)
 
 ```bash
-# Executar ambos algoritmos
+# Executar ambos algoritmos em um grafo
 python src/main.py \
-    --vertices grafos/grafo1/vertices.csv \
-    --edges grafos/grafo1/edges.csv \
+    --vertices Grafos/Grafo1/Nodes1.csv \
+    --edges Grafos/Grafo1/Edges1.csv \
     --algorithm both \
-    --repetitions 10
+    --repetitions 3
 
 # Executar apenas Prim
 python src/main.py \
-    --vertices grafos/grafo1/vertices.csv \
-    --edges grafos/grafo1/edges.csv \
+    --vertices Grafos/Grafo1/Nodes1.csv \
+    --edges Grafos/Grafo1/Edges1.csv \
     --algorithm prim
 
 # Executar apenas Kruskal
 python src/main.py \
-    --vertices grafos/grafo1/vertices.csv \
-    --edges grafos/grafo1/edges.csv \
+    --vertices Grafos/Grafo1/Nodes1.csv \
+    --edges Grafos/Grafo1/Edges1.csv \
     --algorithm kruskal
+```
+
+**Parâmetros:**
+- `--vertices`: arquivo CSV com vértices (Nodes*.csv)
+- `--edges`: arquivo CSV com arestas (Edges*.csv)
+- `--algorithm`: prim | kruskal | both (padrão: both)
+- `--repetitions`: número de repetições (padrão: 1)
+
+**Saída típica:**
+```
+Grafo carregado:
+  Vértices: 8980
+  Arestas:  12629
+
+PRIM - Execução 1/3
+  Peso da MST: 3015372.43
+  Arestas na MST: 8979
+  Validação: ✓ MST/Floresta válida
+  Tempo: 30.69 ms
+  Memória pico: 751.18 KB
+
+KRUSKAL - Execução 1/3
+  Peso da MST: 3015372.43
+  Arestas na MST: 8979
+  Validação: ✓ MST/Floresta válida
+  Tempo: 23.91 ms
+  Memória pico: 749.21 KB
+
+COMPARAÇÃO FINAL
+  Kruskal é 1.14x mais rápido
+  ✓ Pesos idênticos (diff: 0.000000)
 ```
 
 ### Experimentos Automatizados
 
 ```bash
-# 1. Editar experiments.py e configurar caminhos dos grafos
-# 2. Executar:
-python src/experiments.py
-
-# Resultados salvos em: resultados_experimentos.csv
+# Executar experimentos em todos os grafos com 5 repetições
+python src/experiments.py -r 5 -o results/resultados_experimentos.csv
 ```
 
 ### Análise dos Resultados
@@ -119,7 +160,7 @@ python src/metrics.py          # Teste medições
 ## ⚙️ Implementações
 
 ### Prim
-- Usa `heapq` (min-heap) para seleção eficiente de arestas
+- Usa `heapq` (min-heap) para seleção eficiente de vértices
 - Complexidade: O(E log V)
 - Lida com grafos desconexos (floresta geradora)
 
@@ -134,67 +175,29 @@ python src/metrics.py          # Teste medições
 ## 📈 Métricas Coletadas
 
 Para cada execução:
-- ⏱️ **Tempo de execução** (segundos)
-- 💾 **Memória usada** (MB)
+- ⏱️ **Tempo de execução** (wall time e CPU time)
+- 💾 **Memória heap Python** (`tracemalloc`) - alocações Python
+- 💾 **Memória RSS** (`psutil`, se instalado) - memória total do processo
 - 📊 **Peso da MST**
 - 🔢 **Número de arestas na MST**
 - ✅ **Validação** (floresta geradora válida)
 
-### Medição de Memória (limitações)
+### Medição de Memória
 
-- Por padrão o projeto usa `tracemalloc` (em `src/metrics.py`) para medir alocações do heap do Python. Isso é portátil e útil para comparar implementações puramente Python, mas tem limitações importantes:
-    - `tracemalloc` mede apenas alocações gerenciadas pelo interpretador Python (heap). Não mede o RSS total do processo (memória usada por bibliotecas C, buffers do SO, ou overhead do interpretador).
-    - No Windows o módulo `resource` não está disponível; portanto `tracemalloc` é a opção mais portátil.
-    - Se quiser medir o uso total de memória do processo (RSS), recomendo usar `psutil` como opção adicional (`pip install psutil`). Implementar `psutil` permite coletar `mem_rss` (em bytes) e compará-lo com `tracemalloc`.
+O projeto usa duas abordagens complementares:
 
-    Recomendação: mantenha `tracemalloc` como padrão para comparações entre implementações Python, e documente diferenças ao interpretar resultados. Se precisar eu posso adicionar um flag `--mem-method` para alternar para `psutil` quando instalado.
+1. **`tracemalloc` (sempre ativo):**
+   - Mede alocações do heap gerenciado pelo Python
+   - Portátil (funciona em todos os SOs)
+   - Útil para comparar implementações Python
+   - Limitação: não mede overhead do interpretador nem bibliotecas C
 
-### Matching tolerante por coordenadas (`coord_tolerance`)
+2. **`psutil` (opcional, mas implementado):**
+   - Mede RSS (Resident Set Size) do processo inteiro
+   - Inclui memória de bibliotecas C, buffers do SO, overhead do interpretador
+   - Instalação: `pip install psutil`
+   - Se não instalado, o código continua funcionando (apenas sem métricas RSS)
 
-- Por padrão o `graph_loader` mapeia arestas fornecidas por coordenadas (x1,y1,x2,y2) para vértices fazendo um lookup exato por coordenadas arredondadas (6 casas). Isto é rápido e determinístico quando as coordenadas batem exatamente.
-- Para casos onde as coordenadas das arestas têm pequeno ruído (por ex. exportações com diferenças de ponto flutuante), há uma opção de tolerância espacial:
-    - `--coord-tolerance <valor>` em `src/experiments.py` (ou chamando `load_graph(..., coord_tolerance=<valor>)`) tenta mapear as coordenadas de arestas para o vértice mais próximo dentro da tolerância fornecida.
-    - Implementação: o loader usa um spatial-hash grid interno (sem dependências extras) para reduzir as buscas a células vizinhas (muito mais rápido que varredura completa).
-    - Exemplo de uso (experimentos):
+## Autor
 
-```powershell
-python src/experiments.py --repetitions 5 --coord-tolerance 0.0001
-```
-
-    - `coord_tolerance` deve estar na mesma unidade das coordenadas (mesma escala). Se `coord_tolerance == 0` (padrão), o comportamento anterior (arredondamento exato) é usado.
-
-
-## 📝 Checklist de Entrega
-
-- [ ] Implementação correta de Prim (com heap)
-- [ ] Implementação correta de Kruskal (Union-Find com rank + path compression)
-- [ ] Tratamento de grafos desconexos
-- [ ] Validação dos resultados
-- [ ] Experimentos com múltiplas instâncias
-- [ ] Múltiplas repetições por instância
-- [ ] Medição de tempo e memória
-- [ ] Gráficos comparativos
-- [ ] Análise e conclusões no relatório
-- [ ] Código organizado e documentado
-
-## 🎯 Próximos Passos
-
-1. **Obter instâncias de grafos do professor**
-2. **Organizar em `grafos/`**
-3. **Configurar `experiments.py`** com caminhos corretos
-4. **Executar experimentos** (várias repetições)
-5. **Criar `analysis.ipynb`** para:
-   - Carregar `resultados_experimentos.csv`
-   - Gerar gráficos (tempo vs tamanho, memória, etc.)
-   - Análise estatística
-6. **Escrever relatório** com conclusões
-
-## 👥 Equipe
-
-- [Seu nome]
-- [Nome 2]
-- [Nome 3]
-
-## 📅 Entrega
-
-**Data:** 11 de dezembro de 2025
+- Matheus Foltran Consonni

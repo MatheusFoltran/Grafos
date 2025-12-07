@@ -1,5 +1,4 @@
 psutil==7.1.3 # Opcional. Adiciona informações relevantes, mas não é necessário.
-pytest==9.0.1 # Para fins de teste somente.
 
 # Bibliotecas de análise/visualização (opcionais para pós-processamento)
 pandas==2.3.3
