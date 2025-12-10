@@ -1,273 +1,186 @@
-"""
-Script para executar experimentos automatizados em múltiplos grafos.
-Salva resultados em CSV para análise posterior.
-"""
 import argparse
 import csv
 import sys
 from pathlib import Path
 from typing import List, Dict
-from graph_loader import load_graph
+from graph_loader import carregar_grafo
 from prim import prim
 from kruskal import kruskal
-from validation import validate_mst
-from metrics import measure_performance
+from validation import validar_mst
+from metrics import medir_desempenho
 
 
-def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dict]:
-    """Executa experimentos em múltiplos grafos e retorna resultados."""
-    all_results = []
+def executar_experimentos(configuracoes_grafos: List[Dict], repeticoes: int = 5) -> List[Dict]:
+    todos_resultados = []
     
-    for config in graph_configs:
-        name = config['name']
-        vertices_file = config['vertices']
-        edges_file = config['edges']
+    for configuracao in configuracoes_grafos:
+        nome = configuracao['name']
+        arquivo_vertices = configuracao['vertices']
+        arquivo_arestas = configuracao['edges']
         
-        print(f"\nProcessando: {name}")
+        print(f"\nProcessando: {nome}")
         
         try:
-            # Carregar grafo e normalizar para índices 0-based
-            graph = load_graph(vertices_file, edges_file)
-            graph = graph.normalize_to_zero_based()
-            print(f"Grafo: {graph.n_vertices} vértices, {graph.n_edges} arestas")
+            grafo = carregar_grafo(arquivo_vertices, arquivo_arestas)
+            grafo = grafo.normalizar_para_zero()
+            print(f"Grafo: {grafo.n_vertices} vértices, {grafo.n_arestas} arestas")
             
-            # Executar Prim
-            print(f"\nExecutando Prim ({repetitions} repetições)...")
-            adj = graph.get_adjacency_list()
+            print(f"\nExecutando Prim ({repeticoes} repetições)...")
+            adjacencias = grafo.obter_lista_adjacencias()
             
-            for rep in range(repetitions):
-                metrics = measure_performance(prim, graph.n_vertices, adj)
-                mst_edges, total_weight = metrics['result']
-                valid, msg = validate_mst(graph.n_vertices, graph.edges, mst_edges)
+            for rep in range(repeticoes):
+                metricas = medir_desempenho(prim, grafo.n_vertices, adjacencias)
+                arestas_mst, peso_total = metricas['result']
+                valida = validar_mst(grafo.n_vertices, grafo.arestas, arestas_mst)
+                mensagem = "Válida" if valida else "Inválida"
                 
-                all_results.append({
-                    'graph_name': name,
-                    'n_vertices': graph.n_vertices,
-                    'n_edges': graph.n_edges,
+                todos_resultados.append({
+                    'graph_name': nome,
+                    'n_nodes': grafo.n_vertices,
+                    'n_edges': grafo.n_arestas,
                     'algorithm': 'prim',
                     'repetition': rep + 1,
-                    'time_seconds': metrics['time_seconds'],
-                    'cpu_seconds': metrics.get('cpu_seconds'),
-                    'memory_mb': metrics['memory_mb'],
-                    'peak_memory_mb': metrics['peak_memory_mb'],
-                    'mem_rss_before_mb': metrics.get('mem_rss_before_mb'),
-                    'mem_rss_mb': metrics.get('mem_rss_mb'),
-                    'mst_weight': total_weight,
-                    'mst_edges_count': len(mst_edges),
-                    'valid': valid,
-                    'validation_msg': msg
+                    'time_seconds': metricas['time_seconds'],
+                    'cpu_seconds': metricas.get('cpu_seconds'),
+                    'memory_mb': metricas['memory_mb'],
+                    'peak_memory_mb': metricas['peak_memory_mb'],
+                    'mem_rss_before_mb': metricas.get('mem_rss_before_mb'),
+                    'mem_rss_mb': metricas.get('mem_rss_mb'),
+                    'mst_weight': peso_total,
+                    'mst_edges_count': len(arestas_mst),
+                    'valid': valida,
+                    'validation_msg': mensagem
                 })
                 
                 if rep == 0:
-                    print(f"  Peso MST: {total_weight:.2f}, "
-                          f"Tempo: {metrics['time_seconds']*1000:.2f}ms, "
-                          f"Válida: {'Sim' if valid else 'Não'}")
+                    print(f"  Peso MST: {peso_total:.2f}, "
+                          f"Tempo: {metricas['time_seconds']*1000:.2f}ms, "
+                          f"Válida: {'Sim' if valida else 'Não'}")
             
-            # Executar Kruskal
-            print(f"\nExecutando Kruskal ({repetitions} repetições)...")
+            print(f"\nExecutando Kruskal ({repeticoes} repetições)...")
             
-            for rep in range(repetitions):
-                metrics = measure_performance(kruskal, graph.n_vertices, graph.edges)
-                mst_edges, total_weight = metrics['result']
-                valid, msg = validate_mst(graph.n_vertices, graph.edges, mst_edges)
+            for rep in range(repeticoes):
+                metricas = medir_desempenho(kruskal, grafo.n_vertices, grafo.arestas)
+                arestas_mst, peso_total = metricas['result']
+                valida = validar_mst(grafo.n_vertices, grafo.arestas, arestas_mst)
+                mensagem = "Válida" if valida else "Inválida"
                 
-                all_results.append({
-                    'graph_name': name,
-                    'n_vertices': graph.n_vertices,
-                    'n_edges': graph.n_edges,
+                todos_resultados.append({
+                    'graph_name': nome,
+                    'n_nodes': grafo.n_vertices,
+                    'n_edges': grafo.n_arestas,
                     'algorithm': 'kruskal',
                     'repetition': rep + 1,
-                    'time_seconds': metrics['time_seconds'],
-                    'cpu_seconds': metrics.get('cpu_seconds'),
-                    'memory_mb': metrics['memory_mb'],
-                    'peak_memory_mb': metrics['peak_memory_mb'],
-                    'mem_rss_before_mb': metrics.get('mem_rss_before_mb'),
-                    'mem_rss_mb': metrics.get('mem_rss_mb'),
-                    'mst_weight': total_weight,
-                    'mst_edges_count': len(mst_edges),
-                    'valid': valid,
-                    'validation_msg': msg
+                    'time_seconds': metricas['time_seconds'],
+                    'cpu_seconds': metricas.get('cpu_seconds'),
+                    'memory_mb': metricas['memory_mb'],
+                    'peak_memory_mb': metricas['peak_memory_mb'],
+                    'mem_rss_before_mb': metricas.get('mem_rss_before_mb'),
+                    'mem_rss_mb': metricas.get('mem_rss_mb'),
+                    'mst_weight': peso_total,
+                    'mst_edges_count': len(arestas_mst),
+                    'valid': valida,
+                    'validation_msg': mensagem
                 })
                 
                 if rep == 0:
-                    print(f"  Peso MST: {total_weight:.2f}, "
-                          f"Tempo: {metrics['time_seconds']*1000:.2f}ms, "
-                          f"Válida: {'Sim' if valid else 'Não'}")
+                    print(f"  Peso MST: {peso_total:.2f}, "
+                          f"Tempo: {metricas['time_seconds']*1000:.2f}ms, "
+                          f"Válida: {'Sim' if valida else 'Não'}")
         
-        except Exception as e:
-            print(f"ERRO ao processar {name}: {e}")
+        except Exception as erro:
+            print(f"ERRO ao processar {nome}: {erro}")
             continue
     
-    return all_results
+    return todos_resultados
 
 
-def save_results(results: List[Dict], output_file: str):
-    """Salva resultados em arquivo CSV."""
-    if not results:
+def salvar_resultados(resultados: List[Dict], arquivo_saida: str):
+    if not resultados:
         print("Nenhum resultado para salvar.")
         return
     
-    fieldnames = [
-        'graph_name', 'n_vertices', 'n_edges', 'algorithm', 'repetition',
+    nomes_campos = [
+        'graph_name', 'n_nodes', 'n_edges', 'algorithm', 'repetition',
         'time_seconds', 'memory_mb', 'peak_memory_mb',
         'cpu_seconds',
         'mst_weight', 'mst_edges_count', 'valid'
     ]
-    if 'validation_msg' in results[0]:
-        fieldnames.append('validation_msg')
-    if 'mem_rss_mb' in results[0]:
-        fieldnames.append('mem_rss_mb')
-    if 'mem_rss_before_mb' in results[0]:
-        fieldnames.append('mem_rss_before_mb')
+    if 'validation_msg' in resultados[0]:
+        nomes_campos.append('validation_msg')
+    if 'mem_rss_mb' in resultados[0]:
+        nomes_campos.append('mem_rss_mb')
+    if 'mem_rss_before_mb' in resultados[0]:
+        nomes_campos.append('mem_rss_before_mb')
     
-    with open(output_file, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(results)
+    with open(arquivo_saida, 'w', newline='', encoding='utf-8') as arquivo:
+        escritor = csv.DictWriter(arquivo, fieldnames=nomes_campos)
+        escritor.writeheader()
+        escritor.writerows(resultados)
     
-    print(f"\nResultados salvos em: {output_file}")
+    print(f"\nResultados salvos em: {arquivo_saida}")
 
 def main():
-    """Executa experimentos em grafos configurados.
-
-    Descobre automaticamente grafos em subpastas do diretório especificado.
-    """
-
-    parser = argparse.ArgumentParser(
-        description='Executa experimentos automáticos para comparar Prim vs Kruskal.',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Exemplos de uso:
-  # Processar todos os grafos no diretório padrão (Grafos/)
-  python experiments.py
-  
-  # Processar grafos específicos
-  python experiments.py --graphs Grafo1 Grafo2
-  
-  # Usar diretório customizado
-  python experiments.py --graph-dir /caminho/para/grafos
-  
-  # Ajustar repetições
-  python experiments.py --repetitions 20
-  
-  # Customizar arquivo de saída
-  python experiments.py --output resultados_custom.csv
-        """
-    )
-    
-    parser.add_argument(
-        '--graph-dir', 
-        type=str,
-        default='Grafos',
-        help='Diretório contendo subpastas de grafos (default: Grafos)'
-    )
-    
-    parser.add_argument(
-        '--graphs', 
-        nargs='*',
-        metavar='NOME',
-        help='Nomes específicos de grafos para processar (ex: Grafo1 Grafo2). '
-             'Se omitido, processa todos os grafos encontrados no diretório.'
-    )
-    
-    parser.add_argument(
-        '--repetitions', '-r', 
-        type=int, 
-        default=10,
-        metavar='N',
-        help='Número de repetições por algoritmo (default: 10)'
-    )
-    
-    parser.add_argument(
-        '--output', '-o',
-        type=str,
-        default='results/resultados_experimentos.csv',
-        metavar='ARQUIVO',
-        help='Arquivo de saída CSV (default: results/resultados_experimentos.csv)'
-    )
-    
+    # Configuração simples dos argumentos
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dir', default='Grafos', help='Diretório dos grafos')
+    parser.add_argument('--rep', type=int, default=10, help='Número de repetições')
+    parser.add_argument('--graphs', nargs='*', help='Filtrar grafos específicos')
+    parser.add_argument('--out', default='results/resultados_experimentos.csv', help='Arquivo de saída')
     args = parser.parse_args()
 
-    # Descobrir grafos automaticamente na pasta raiz especificada
-    project_root = Path(__file__).resolve().parents[1]
-    grafos_dir = project_root / args.graph_dir
+    path_grafos = Path(args.dir)
+    
+    # Se não achar a pasta direto, tenta voltar um nível (caso esteja rodando de src/)
+    if not path_grafos.exists():
+        path_grafos = Path('..') / args.dir
+        
+    if not path_grafos.exists():
+        print(f"Erro: Pasta '{args.dir}' não encontrada.")
+        return
 
-    if not grafos_dir.exists():
-        print(f"\nDiretório não encontrado: {grafos_dir}")
-        sys.exit(1)
+    lista_grafos = []
+    print(f"Lendo grafos de: {path_grafos.resolve()}")
 
-    graph_configs = []
+    # Varre as pastas para procurar os grafos
+    for pasta in sorted(path_grafos.iterdir()):
+        if not pasta.is_dir():
+            continue
+            
+        if args.graphs and pasta.name not in args.graphs:
+            continue
+            
+        # Tenta identificar arquivos de vertices e arestas
+        arq_vertices = None
+        arq_arestas = None
+        
+        for arquivo in pasta.iterdir():
+            nome = arquivo.name.lower()
+            if 'node' in nome or 'vert' in nome:
+                arq_vertices = str(arquivo)
+            elif 'edge' in nome:
+                arq_arestas = str(arquivo)
+        
+        if arq_vertices and arq_arestas:
+            lista_grafos.append({
+                'name': pasta.name,
+                'vertices': arq_vertices,
+                'edges': arq_arestas
+            })
+            print(f"{pasta.name}")
     
-    print(f"\nBuscando grafos em: {grafos_dir}")
-    
-    if grafos_dir.exists() and grafos_dir.is_dir():
-        for sub in sorted(grafos_dir.iterdir()):
-            if not sub.is_dir():
-                continue
+    if not lista_grafos:
+        print("Nenhum grafo encontrado.")
+        return
 
-            # Filtrar por nomes específicos se fornecidos via --graphs
-            if args.graphs and sub.name not in args.graphs:
-                continue
-
-            # Procurar arquivos de nós e arestas por padrões simples (case-insensitive)
-            nodes_file = None
-            edges_file = None
-            for f in sub.iterdir():
-                name = f.name.lower()
-                if any(k in name for k in ('node', 'nodes', 'vert', 'vertices')) and nodes_file is None:
-                    nodes_file = str(f)
-                if 'edge' in name and edges_file is None:
-                    edges_file = str(f)
-
-            if nodes_file and edges_file:
-                graph_configs.append({
-                    'name': sub.name,
-                    'vertices': nodes_file,
-                    'edges': edges_file
-                })
-                print(f"  - {sub.name}: {Path(nodes_file).name}, {Path(edges_file).name}")
-            else:
-                print(f"  Pulando {sub.name}: arquivos de nós/arestas não encontrados")
+    print(f"\nRodando experimentos ({args.rep} repetições)...")
+    resultados = executar_experimentos(lista_grafos, args.rep)
     
-    if not graph_configs:
-        print(f"\nNenhum grafo válido encontrado em {grafos_dir}")
-        if args.graphs:
-            print(f"Grafos solicitados: {', '.join(args.graphs)}")
-        sys.exit(1)
-
-    # Validar que arquivos existem
-    valid_configs = []
-    for config in graph_configs:
-        if Path(config['vertices']).exists() and Path(config['edges']).exists():
-            valid_configs.append(config)
-        else:
-            print(f"Pulando {config['name']}: arquivos não encontrados")
+    # Garantir que pasta de resultados existe
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     
-    if not valid_configs:
-        print("\nNenhum grafo válido encontrado após verificação de arquivos")
-        sys.exit(1)
-    
-    print(f"\nCONFIGURAÇÃO DOS EXPERIMENTOS")
-    print(f"Diretório de grafos: {grafos_dir}")
-    print(f"Grafos selecionados: {len(valid_configs)}")
-    for cfg in valid_configs:
-        print(f"- {cfg['name']}")
-    print(f"Repetições por algoritmo: {args.repetitions}")
-    print(f"Total de execuções: {len(valid_configs) * 2 * args.repetitions}")
-    print(f"Arquivo de saída: {args.output}")
-    
-    # Executar experimentos
-    results = run_experiments(valid_configs, args.repetitions)
-    
-    # Salvar resultados usando o nome customizado
-    save_results(results, args.output)
-    
-    # Resumo
-    print(f"\nExperimentos concluídos")
-    print(f"Total de execuções: {len(results)}")
-    print(f"Grafos processados: {len(valid_configs)}")
-    print(f"Resultados salvos em: {args.output}")
-    print(f"\nUse analysis.ipynb para gerar gráficos e análises")
+    salvar_resultados(resultados, args.out)
+    print("Concluído.")
 
 
 if __name__ == "__main__":

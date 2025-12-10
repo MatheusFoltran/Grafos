@@ -1,174 +1,161 @@
-"""
-Carrega grafos de arquivos CSV.
-Vértices com coordenadas UTM, arestas com pares de IDs.
-Peso calculado por distância euclidiana.
-"""
 import csv
 import math
 from typing import List, Tuple, Dict
 
 
 class Graph:
-    """Grafo ponderado não-direcionado com vértices e arestas."""
     
     def __init__(self):
-        self.vertices: Dict[int, Tuple[float, float]] = {}  # id -> (x, y)
-        self.edges: List[Tuple[int, int, float]] = []  # (u, v, peso)
+        self.vertices: Dict[int, Tuple[float, float]] = {}
+        self.arestas: List[Tuple[int, int, float]] = []
         self.n_vertices = 0
-        self.n_edges = 0
+        self.n_arestas = 0
     
     def add_vertex(self, vertex_id: int, x: float, y: float):
         if vertex_id not in self.vertices:
             self.vertices[vertex_id] = (x, y)
             self.n_vertices += 1
     
-    def add_edge(self, u: int, v: int, weight: float):
-        self.edges.append((u, v, weight))
-        self.n_edges += 1
+    def adicionar_aresta(self, u: int, v: int, peso: float):
+        self.arestas.append((u, v, peso))
+        self.n_arestas += 1
     
-    def get_adjacency_list(self) -> List[List[Tuple[int, float]]]:
-        """Retorna lista de adjacências adj[u] = [(v, peso), ...]."""
+    def obter_lista_adjacencias(self) -> List[List[Tuple[int, float]]]:
+        # Constrói lista de adjacências para o grafo.
         if not self.vertices:
             return []
         
-        max_id = max(self.vertices.keys())
-        adj = [[] for _ in range(max_id + 1)]
+        maior_id = max(self.vertices.keys())
+        adjacencias = [[] for _ in range(maior_id + 1)]
         
-        for u, v, weight in self.edges:
-            adj[u].append((v, weight))
-            adj[v].append((u, weight))
+        for u, v, peso in self.arestas:
+            adjacencias[u].append((v, peso))
+            adjacencias[v].append((u, peso))
         
-        return adj
+        return adjacencias
     
-    def get_vertex_mapping(self) -> Dict[int, int]:
-        """Converte IDs dos vértices para sequência 0, 1, 2, 3..."""
+    def obter_mapeamento_vertices(self) -> Dict[int, int]:
         return {vid: idx for idx, vid in enumerate(sorted(self.vertices.keys()))}
     
-    def normalize_to_zero_based(self) -> 'Graph':
-        """Converte IDs dos vértices para sequência 0, 1, 2... (necessário pros algoritmos)."""
-        mapping = self.get_vertex_mapping()
-        new_graph = Graph()
+    def normalizar_para_zero(self) -> 'Graph':
+        mapeamento = self.obter_mapeamento_vertices()
+        grafo_novo = Graph()
         
-        for old_id, (x, y) in self.vertices.items():
-            new_graph.add_vertex(mapping[old_id], x, y)
+        for id_antigo, (x, y) in self.vertices.items():
+            grafo_novo.add_vertex(mapeamento[id_antigo], x, y)
         
-        for u, v, weight in self.edges:
-            new_graph.add_edge(mapping[u], mapping[v], weight)
+        for u, v, peso in self.arestas:
+            grafo_novo.adicionar_aresta(mapeamento[u], mapeamento[v], peso)
         
-        return new_graph
+        return grafo_novo
 
 
-def euclidean_distance(x1: float, y1: float, x2: float, y2: float) -> float:
-    """Calcula distância euclidiana entre dois pontos."""
+def distancia_euclidiana(x1: float, y1: float, x2: float, y2: float) -> float:
     return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 
-def load_graph(vertices_file: str, edges_file: str) -> Graph:
-    """
-    Carrega grafo de CSVs (vértices com coordenadas UTM, arestas com IDs).
-    Peso calculado por distância euclidiana.
-    """
-    graph = Graph()
+def carregar_grafo(arquivo_vertices: str, arquivo_arestas: str) -> Graph:
+    grafo = Graph()
     
     # carregar vértices
-    with open(vertices_file, 'r', encoding='utf-8') as f:
-        reader = csv.reader(f)
+    with open(arquivo_vertices, 'r', encoding='utf-8') as f:
+        leitor = csv.reader(f)
         
-        first_row = next(reader, None)
-        if first_row is None:
-            raise ValueError(f"Arquivo de vértices vazio: {vertices_file}")
+        primeira_linha = next(leitor, None)
+        if primeira_linha is None:
+            raise ValueError(f"Arquivo de vértices vazio: {arquivo_vertices}")
         
         # detectar se tem header
-        is_header = False
+        tem_cabecalho = False
         try:
-            int(first_row[0])
-            float(first_row[1])
-            float(first_row[2])
+            int(primeira_linha[0])
+            float(primeira_linha[1])
+            float(primeira_linha[2])
         except (ValueError, IndexError):
-            is_header = True
+            tem_cabecalho = True
         
-        if not is_header:
+        if not tem_cabecalho:
             try:
-                vertex_id = int(first_row[0])
-                x = float(first_row[1])
-                y = float(first_row[2])
-                graph.add_vertex(vertex_id, x, y)
-            except (ValueError, IndexError) as e:
-                raise ValueError(f"Formato inválido no arquivo de vértices: {e}")
+                id_vertice = int(primeira_linha[0])
+                x = float(primeira_linha[1])
+                y = float(primeira_linha[2])
+                grafo.add_vertex(id_vertice, x, y)
+            except (ValueError, IndexError) as erro:
+                raise ValueError(f"Formato inválido no arquivo de vértices: {erro}")
         
-        for row in reader:
-            if len(row) < 3:
+        for linha in leitor:
+            if len(linha) < 3:
                 continue
             
             try:
-                vertex_id = int(row[0])
-                x = float(row[1])
-                y = float(row[2])
-                graph.add_vertex(vertex_id, x, y)
+                id_vertice = int(linha[0])
+                x = float(linha[1])
+                y = float(linha[2])
+                grafo.add_vertex(id_vertice, x, y)
             except (ValueError, IndexError):
                 continue
     
-    if graph.n_vertices == 0:
-        raise ValueError(f"Nenhum vértice válido encontrado em: {vertices_file}")
+    if grafo.n_vertices == 0:
+        raise ValueError(f"Nenhum vértice válido encontrado em: {arquivo_vertices}")
     
     # carregar arestas e calcular pesos
-    seen_edges = set()
+    arestas_vistas = set()
     
-    with open(edges_file, 'r', encoding='utf-8') as f:
-        reader = csv.reader(f)
+    with open(arquivo_arestas, 'r', encoding='utf-8') as f:
+        leitor = csv.reader(f)
         
         # Ler primeira linha
-        first_row = next(reader, None)
-        if first_row is None:
-            return graph
+        primeira_linha = next(leitor, None)
+        if primeira_linha is None:
+            return grafo
         
-        is_header = False
+        tem_cabecalho = False
         try:
-            int(first_row[0])
-            int(first_row[1])
+            int(primeira_linha[0])
+            int(primeira_linha[1])
         except (ValueError, IndexError):
-            is_header = True
+            tem_cabecalho = True
         
-        # Processar primeira linha se for dados
-        if not is_header:
+        # Processa primeira linha se for dados
+        if not tem_cabecalho:
             try:
-                u = int(first_row[0])
-                v = int(first_row[1])
+                u = int(primeira_linha[0])
+                v = int(primeira_linha[1])
                 
-                if u in graph.vertices and v in graph.vertices:
-                    edge_key = (min(u, v), max(u, v))
-                    if edge_key not in seen_edges:
-                        x1, y1 = graph.vertices[u]
-                        x2, y2 = graph.vertices[v]
-                        weight = euclidean_distance(x1, y1, x2, y2)
-                        graph.add_edge(u, v, weight)
-                        seen_edges.add(edge_key)
+                if u in grafo.vertices and v in grafo.vertices:
+                    chave_aresta = (min(u, v), max(u, v))
+                    if chave_aresta not in arestas_vistas:
+                        x1, y1 = grafo.vertices[u]
+                        x2, y2 = grafo.vertices[v]
+                        peso = distancia_euclidiana(x1, y1, x2, y2)
+                        grafo.adicionar_aresta(u, v, peso)
+                        arestas_vistas.add(chave_aresta)
             except (ValueError, IndexError, KeyError):
                 pass
         
-        # Processar linhas restantes
-        for row in reader:
-            if len(row) < 2:
+        # Processa linhas restantes
+        for linha in leitor:
+            if len(linha) < 2:
                 continue
             
             try:
-                u = int(row[0])
-                v = int(row[1])
+                u = int(linha[0])
+                v = int(linha[1])
                 
-                if u not in graph.vertices or v not in graph.vertices:
+                if u not in grafo.vertices or v not in grafo.vertices:
                     continue
                 
-                edge_key = (min(u, v), max(u, v))
-                if edge_key in seen_edges:
+                chave_aresta = (min(u, v), max(u, v))
+                if chave_aresta in arestas_vistas:
                     continue
                 
-                x1, y1 = graph.vertices[u]
-                x2, y2 = graph.vertices[v]
-                weight = euclidean_distance(x1, y1, x2, y2)
+                x1, y1 = grafo.vertices[u]
+                x2, y2 = grafo.vertices[v]
+                peso = distancia_euclidiana(x1, y1, x2, y2)
                 
-                graph.add_edge(u, v, weight)
-                seen_edges.add(edge_key)
+                grafo.adicionar_aresta(u, v, peso)
+                arestas_vistas.add(chave_aresta)
             except (ValueError, IndexError, KeyError):
                 continue
     
-    return graph
+    return grafo

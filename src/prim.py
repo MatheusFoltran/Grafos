@@ -1,206 +1,89 @@
-"""
-Implementação do algoritmo de Prim usando heap de prioridade.
-Usa heapq para selecionar o vértice de menor custo.
-Funciona com grafos desconexos (retorna floresta geradora).
-"""
 import heapq
 from typing import List, Tuple
 
 
-def prim(n_vertices: int, adj: List[List[Tuple[int, float]]]) -> Tuple[List[Tuple[int, int, float]], float]:
-    """
-    Algoritmo de Prim para MST usando heap.
-    
-    Args:
-        n_vertices: número de vértices
-        adj: lista de adjacências adj[u] = [(v, peso), ...]
-    
-    Returns:
-        (mst_edges, total_weight) - arestas da MST e peso total
-    """
+def prim(n_vertices: int, adjacencias: List[List[Tuple[int, float]]]) -> Tuple[List[Tuple[int, int, float]], float]:
+    # Algoritmo de Prim usando heap de vértices
     if n_vertices == 0:
         return [], 0.0
     
-    mst_edges = []
-    total_weight = 0.0
+    arestas_arvore = []
+    peso_total = 0.0
     
-    in_mst = [False] * n_vertices
-    key = [float('inf')] * n_vertices
-    parent = [-1] * n_vertices
+    visitado = [False] * n_vertices
+    custo = [float('inf')] * n_vertices
+    pai = [-1] * n_vertices
     
-    # processar cada componente conexa
-    for start_vertex in range(n_vertices):
-        if in_mst[start_vertex]:
+    # processa cada componente do grafo
+    for vertice_inicial in range(n_vertices):
+        if visitado[vertice_inicial]:
             continue
         
-        key[start_vertex] = 0.0
-        heap = [(0.0, start_vertex)]
+        custo[vertice_inicial] = 0.0
+        fila_prioridade = [(0.0, vertice_inicial)]
         
-        while heap:
-            curr_key, u = heapq.heappop(heap)
+        while fila_prioridade:
+            custo_atual, vertice = heapq.heappop(fila_prioridade)
             
-            if in_mst[u]:  # já processado
+            if visitado[vertice]:
                 continue
             
-            in_mst[u] = True
-            total_weight += curr_key
+            visitado[vertice] = True
+            peso_total += custo_atual
             
-            if parent[u] != -1:
-                mst_edges.append((parent[u], u, curr_key))
+            if pai[vertice] != -1:
+                arestas_arvore.append((pai[vertice], vertice, custo_atual))
             
-            # atualizar vizinhos
-            for v, weight in adj[u]:
-                if not in_mst[v] and weight < key[v]:
-                    key[v] = weight
-                    parent[v] = u
-                    heapq.heappush(heap, (weight, v))
+            for v, peso in adjacencias[vertice]:
+                if not visitado[v] and peso < custo[v]:
+                    custo[v] = peso
+                    pai[v] = vertice
+                    heapq.heappush(fila_prioridade, (peso, v))
     
-    return mst_edges, total_weight
+    return arestas_arvore, peso_total
 
 
-def validate_mst(n_vertices: int, adj: List[List[Tuple[int, float]]], 
-                 mst_edges: List[Tuple[int, int, float]]) -> dict:
-    """
-    Valida se a MST está correta.
+def validar_mst_local(n_vertices: int, adjacencias: List[List[Tuple[int, float]]], 
+                 arestas_mst: List[Tuple[int, int, float]]):
+
+    erros = []
+    valido = True
     
-    Args:
-        n_vertices: número de vértices
-        adj: lista de adjacências original
-        mst_edges: MST calculada
+    # Constrói conjunto de arestas do grafo original
+    conjunto_arestas = set()
+    for u in range(len(adjacencias)):
+        for v, peso in adjacencias[u]:
+            conjunto_arestas.add((min(u, v), max(u, v), peso))
     
-    Returns:
-        Dicionário com resultados da validação
-    """
-    result = {
-        'is_valid': True,
-        'errors': [],
-        'warnings': [],
-        'info': {}
-    }
+    # Verifica se todas as arestas da MST existem no grafo
+    for u, v, peso in arestas_mst:
+        aresta_normalizada = (min(u, v), max(u, v), peso)
+        if aresta_normalizada not in conjunto_arestas:
+            valido = False
+            erros.append(f"Aresta ({u}, {v}, {peso}) não existe no grafo")
     
-    # Construir conjunto de arestas do grafo original
-    edge_set = set()
-    for u in range(len(adj)):
-        for v, weight in adj[u]:
-            edge_set.add((min(u, v), max(u, v), weight))
+    # Verifica se forma ciclo usando Union-Find
+    pai = list(range(n_vertices))
     
-    # Verificar se todas as arestas da MST existem no grafo
-    for u, v, weight in mst_edges:
-        normalized = (min(u, v), max(u, v), weight)
-        if normalized not in edge_set:
-            result['is_valid'] = False
-            result['errors'].append(f"Aresta ({u}, {v}, {weight}) não existe no grafo")
+    def buscar(x):
+        if pai[x] != x:
+            pai[x] = buscar(pai[x])
+        return pai[x]
     
-    # Verificar se forma ciclo usando Union-Find
-    parent = list(range(n_vertices))
-    
-    def find(x):
-        if parent[x] != x:
-            parent[x] = find(parent[x])
-        return parent[x]
-    
-    def union(x, y):
-        px, py = find(x), find(y)
+    def unir(x, y):
+        px, py = buscar(x), buscar(y)
         if px == py:
             return False
-        parent[px] = py
+        pai[px] = py
         return True
     
-    for u, v, _ in mst_edges:
-        if not union(u, v):
-            result['is_valid'] = False
-            result['errors'].append(f"Ciclo detectado: aresta ({u}, {v})")
+    for u, v, _ in arestas_mst:
+        if not unir(u, v):
+            valido = False
+            erros.append(f"Ciclo detectado: aresta ({u}, {v})")
     
-    # Contar componentes
-    components = len(set(find(i) for i in range(n_vertices)))
-    result['info']['n_components'] = components
-    result['info']['n_edges'] = len(mst_edges)
+    # Confere se o número de arestas é válido
+    if len(arestas_mst) != n_vertices - 1:
+        print(f"MST tem número de arestas diferente do esperado")
     
-    # Verificar número de arestas
-    if len(mst_edges) == n_vertices - 1:
-        result['info']['is_spanning_tree'] = True
-    else:
-        result['warnings'].append(
-            f"MST tem {len(mst_edges)} arestas, esperado {n_vertices - 1}. "
-            f"Grafo tem {components} componente(s) conexa(s)."
-        )
-        result['info']['is_spanning_tree'] = False
-    
-    return result
-
-
-if __name__ == "__main__":
-    print("=" * 70)
-    print("TESTE: Prim com Heap de Vértices")
-    print("=" * 70)
-    
-    # Teste 1: Grafo conexo simples
-    print("\n[Teste 1] Grafo conexo (4 vértices)")
-    print("-" * 70)
-    n = 4
-    adj = [
-        [(1, 1.0), (2, 4.0), (3, 3.0)],  # 0
-        [(0, 1.0), (2, 2.0)],            # 1
-        [(0, 4.0), (1, 2.0), (3, 5.0)],  # 2
-        [(0, 3.0), (2, 5.0)]             # 3
-    ]
-    
-    mst, weight = prim(n, adj)
-    print(f"MST: {mst}")
-    print(f"Peso total: {weight}")
-    print(f"Arestas: {len(mst)} (esperado: {n-1})")
-    
-    validation = validate_mst(n, adj, mst)
-    print(f"Validação: {'PASSOU' if validation['is_valid'] else 'FALHOU'}")
-    
-    # Teste 2: Grafo desconexo
-    print("\n[Teste 2] Grafo desconexo (2 componentes)")
-    print("-" * 70)
-    n = 5
-    adj = [
-        [(1, 1.0)],           # 0
-        [(0, 1.0), (2, 2.0)], # 1
-        [(1, 2.0)],           # 2
-        [(4, 3.0)],           # 3
-        [(3, 3.0)]            # 4
-    ]
-    
-    mst, weight = prim(n, adj)
-    print(f"MST (floresta): {mst}")
-    print(f"Peso total: {weight}")
-    print(f"Arestas: {len(mst)}")
-    
-    validation = validate_mst(n, adj, mst)
-    print(f"Validação: {'PASSOU' if validation['is_valid'] else 'FALHOU'}")
-    print(f"Componentes conexas: {validation['info']['n_components']}")
-    
-    # Teste 3: Comparação com versão anterior
-    print("\n[Teste 3] Benchmark de performance")
-    print("-" * 70)
-    
-    # Criar grafo maior para teste
-    import random
-    n_large = 1000
-    adj_large = [[] for _ in range(n_large)]
-    
-    # Grafo esparso tipo malha (cada vértice conecta com ~4 vizinhos)
-    for i in range(n_large):
-        for j in range(max(0, i-2), min(n_large, i+3)):
-            if i != j:
-                weight = random.uniform(1.0, 10.0)
-                adj_large[i].append((j, weight))
-    
-    import time
-    
-    start = time.perf_counter()
-    mst_large, weight_large = prim(n_large, adj_large)
-    elapsed = time.perf_counter() - start
-    
-    print(f"Grafo com {n_large} vértices")
-    print(f"Tempo: {elapsed*1000:.2f} ms")
-    print(f"MST peso: {weight_large:.2f}")
-    print(f"MST arestas: {len(mst_large)}")
-    
-    print("\n" + "=" * 70)
-    print("TODOS OS TESTES CONCLUÍDOS")
-    print("=" * 70)
+    return valido, erros

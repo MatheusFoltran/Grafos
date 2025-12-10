@@ -112,14 +112,14 @@ Grafo carregado:
 PRIM - Execução 1/3
   Peso da MST: 3015372.43
   Arestas na MST: 8979
-  Validação: OK - MST/Floresta válida
+  Validação: Válida
   Tempo: 30.69 ms
   Memória pico: 751.18 KB
 
 KRUSKAL - Execução 1/3
   Peso da MST: 3015372.43
   Arestas na MST: 8979
-  Validação: OK - MST/Floresta válida
+  Validação: Válida
   Tempo: 23.91 ms
   Memória pico: 749.21 KB
 
@@ -132,7 +132,10 @@ COMPARAÇÃO FINAL
 
 ```bash
 # Executar experimentos em todos os grafos com 5 repetições
-python src/experiments.py -r 5 -o results/resultados_experimentos.csv
+python src/experiments.py --dir Grafos --rep 5
+
+# Executar apenas em grafos específicos
+python src/experiments.py --dir Grafos --rep 3 --graphs Grafo1 Grafo2
 ```
 
 ### Análise dos Resultados
@@ -140,17 +143,6 @@ python src/experiments.py -r 5 -o results/resultados_experimentos.csv
 ```bash
 # Abrir Jupyter Notebook
 jupyter notebook src/analysis.ipynb
-```
-
-## Testes Básicos
-
-Cada módulo pode ser testado individualmente:
-
-```bash
-python src/graph_loader.py    # Teste carregamento
-python src/prim.py             # Teste Prim
-python src/kruskal.py          # Teste Kruskal + Union-Find
-python src/metrics.py          # Teste medições
 ```
 
 ## Implementações

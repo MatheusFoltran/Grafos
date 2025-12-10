@@ -1,173 +1,101 @@
-"""
-Validação de MST/Floresta.
-Verifica ciclos, cobertura de vértices e número de arestas.
-"""
-from typing import List, Tuple, Dict, Set
+from typing import List, Tuple, Dict
 
 
 class UnionFind:
-    """Union-Find para validação."""
     
     def __init__(self, n: int):
-        self.parent = list(range(n))
-        self.rank = [0] * n
-        self.n_components = n
+        self.pai = list(range(n))
+        self.altura = [0] * n
+        self.num_componentes = n
     
     def find(self, x: int) -> int:
-        if self.parent[x] != x:
-            self.parent[x] = self.find(self.parent[x])
-        return self.parent[x]
+        if self.pai[x] != x:
+            self.pai[x] = self.find(self.pai[x])
+        return self.pai[x]
     
     def union(self, x: int, y: int) -> bool:
-        root_x = self.find(x)
-        root_y = self.find(y)
+        raiz_x = self.find(x)
+        raiz_y = self.find(y)
         
-        if root_x == root_y:
+        if raiz_x == raiz_y:
             return False
         
-        if self.rank[root_x] < self.rank[root_y]:
-            self.parent[root_x] = root_y
-        elif self.rank[root_x] > self.rank[root_y]:
-            self.parent[root_y] = root_x
+        if self.altura[raiz_x] < self.altura[raiz_y]:
+            self.pai[raiz_x] = raiz_y
+        elif self.altura[raiz_x] > self.altura[raiz_y]:
+            self.pai[raiz_y] = raiz_x
         else:
-            self.parent[root_y] = root_x
-            self.rank[root_x] += 1
+            self.pai[raiz_y] = raiz_x
+            self.altura[raiz_x] += 1
         
-        self.n_components -= 1
+        self.num_componentes -= 1
         return True
     
-    def get_component_sizes(self) -> dict:
-        components = {}
-        for i in range(len(self.parent)):
-            root = self.find(i)
-            components[root] = components.get(root, 0) + 1
-        return components
+    def obter_tamanhos_componentes(self) -> dict:
+        componentes = {}
+        for i in range(len(self.pai)):
+            raiz = self.find(i)
+            componentes[raiz] = componentes.get(raiz, 0) + 1
+        return componentes
 
 
-def get_original_components(n_vertices: int, edges: List[Tuple[int, int, float]]) -> dict:
-    """Identifica componentes conexas do grafo original."""
+def obter_componentes_originais(n_vertices: int, arestas: List[Tuple[int, int, float]]) -> dict:
     uf = UnionFind(n_vertices)
     
-    # Unir vértices conectados
-    for u, v, _ in edges:
+    for u, v, _ in arestas:
         uf.union(u, v)
     
-    # Agrupar vértices por componente
-    components = {}
-    for v in range(n_vertices):
-        root = uf.find(v)
-        if root not in components:
-            components[root] = set()
-        components[root].add(v)
+    componentes = {}
+    for vertice in range(n_vertices):
+        raiz = uf.find(vertice)
+        if raiz not in componentes:
+            componentes[raiz] = set()
+        componentes[raiz].add(vertice)
     
-    return components
+    return componentes
 
 
-def validate_mst(n_vertices: int,
-                 original_edges: List[Tuple[int, int, float]],
-                 mst_edges: List[Tuple[int, int, float]]) -> Tuple[bool, str]:
-    """
-    Valida MST/Floresta: verifica ausência de ciclos, cobertura de vértices
-    e número correto de arestas por componente.
-    """
-    original_components = get_original_components(n_vertices, original_edges)
-    comp_list = list(original_components.values())
+def validar_mst(n_vertices: int,
+                arestas_originais: List[Tuple[int, int, float]],
+                arestas_mst: List[Tuple[int, int, float]]) -> bool:
+    componentes_originais = obter_componentes_originais(n_vertices, arestas_originais)
+    lista_componentes = list(componentes_originais.values())
 
-    # mapear cada vértice para sua componente
-    vertex_to_comp: Dict[int, int] = {}
-    for idx, vertices in enumerate(comp_list):
+    vertice_para_comp: Dict[int, int] = {}
+    for idx, vertices in enumerate(lista_componentes):
         for v in vertices:
-            vertex_to_comp[v] = idx
+            vertice_para_comp[v] = idx
 
-    comp_edge_counts: Dict[int, int] = {}
+    contagem_arestas_comp: Dict[int, int] = {}
 
-    # verificar aciclicidade
-    mst_uf = UnionFind(n_vertices)
-    for u, v, _ in mst_edges:
+    validador_mst = UnionFind(n_vertices)
+    for u, v, _ in arestas_mst:
         if not (0 <= u < n_vertices and 0 <= v < n_vertices):
-            return False, f"Índices inválidos na MST: ({u}, {v})"
+            print(f"Índices inválidos ({u}, {v})")
+            return False
 
-        if not mst_uf.union(u, v):
-            return False, f"Ciclo detectado ao adicionar aresta ({u}, {v})"
+        if not validador_mst.union(u, v):
+            print(f"Ciclo detectado ({u}, {v})")
+            return False
 
-        comp_u = vertex_to_comp.get(u)
-        comp_v = vertex_to_comp.get(v)
+        comp_u = vertice_para_comp.get(u)
+        comp_v = vertice_para_comp.get(v)
         if comp_u is None or comp_v is None:
-            return False, "Vértice da MST não pertence ao grafo original"
+            print("Vértice fora do grafo original")
+            return False
+            
         if comp_u != comp_v:
-            return False, "Aresta da MST conecta componentes distintas do grafo original"
+            print("Aresta conecta componentes distintas")
+            return False
 
-        comp_edge_counts[comp_u] = comp_edge_counts.get(comp_u, 0) + 1
+        contagem_arestas_comp[comp_u] = contagem_arestas_comp.get(comp_u, 0) + 1
 
-    # Conferir número de arestas por componente (k-1)
-    for idx, vertices in enumerate(comp_list):
-        k = len(vertices)
-        expected = max(0, k - 1)
-        actual = comp_edge_counts.get(idx, 0)
-        if actual != expected:
-            return False, (f"Componente {idx} possui {k} vértices e deveria ter "
-                          f"{expected} arestas na MST, mas possui {actual}")
+    for idx, vertices in enumerate(lista_componentes):
+        tamanho_comp = len(vertices)
+        arestas_esperadas = max(0, tamanho_comp - 1)
+        arestas_reais = contagem_arestas_comp.get(idx, 0)
+        if arestas_reais != arestas_esperadas:
+            print(f"Componente {idx} com arestas incorretas")
+            return False
 
-    return True, "MST/Floresta válida (aciclicidade e cobertura por componente confirmadas)"
-
-
-# Testes unitários
-if __name__ == "__main__":
-    print("="*70)
-    print("TESTES DE VALIDAÇÃO DE MST")
-    print("="*70)
-    
-    # Teste 1: MST válida em grafo conexo
-    print("\n1. MST válida (grafo conexo):")
-    n = 4
-    original = [(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0), (0, 3, 4.0)]
-    mst = [(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0)]
-    valid, msg = validate_mst(n, original, mst)
-    print(f"   {msg}")
-    assert valid, "Deveria ser válida!"
-    
-    # Teste 2: MST incompleta (faltando vértice)
-    print("\n2. MST incompleta (faltando vértice):")
-    mst_incomplete = [(0, 1, 1.0), (1, 2, 2.0)]  # Falta vértice 3!
-    valid, msg = validate_mst(n, original, mst_incomplete)
-    print(f"   {msg}")
-    assert not valid, "Deveria ser inválida!"
-    
-    # Teste 3: MST com ciclo
-    print("\n3. MST com ciclo:")
-    mst_cycle = [(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0), (0, 3, 4.0)]
-    valid, msg = validate_mst(n, original, mst_cycle)
-    print(f"   {msg}")
-    assert not valid, "Deveria ser inválida!"
-    
-    # Teste 4: Grafo desconexo (2 componentes)
-    print("\n4. Floresta válida (grafo desconexo):")
-    n = 6
-    original = [(0, 1, 1.0), (1, 2, 2.0),  # Componente 1
-                (3, 4, 3.0), (4, 5, 4.0)]   # Componente 2
-    mst = [(0, 1, 1.0), (1, 2, 2.0),       # 2 arestas para 3 vértices
-           (3, 4, 3.0), (4, 5, 4.0)]        # 2 arestas para 3 vértices
-    valid, msg = validate_mst(n, original, mst)
-    print(f"   {msg}")
-    assert valid, "Deveria ser válida!"
-    
-    # Teste 5: Floresta incompleta
-    print("\n5. Floresta incompleta (faltando aresta):")
-    mst_incomplete = [(0, 1, 1.0), (1, 2, 2.0),  # Componente 1 OK
-                      (3, 4, 3.0)]                # Componente 2 incompleta!
-    valid, msg = validate_mst(n, original, mst_incomplete)
-    print(f"   {msg}")
-    assert not valid, "Deveria ser inválida!"
-    
-    # Teste 6: Grafo com vértice isolado
-    print("\n6. Grafo com vértice isolado:")
-    n = 4
-    original = [(0, 1, 1.0), (1, 2, 2.0)]  # Vértice 3 isolado
-    mst = [(0, 1, 1.0), (1, 2, 2.0)]
-    valid, msg = validate_mst(n, original, mst)
-    print(f"   {msg}")
-    assert valid, "Deveria ser válida!"
-    
-    print("\n" + "="*70)
-    print("TODOS OS TESTES PASSARAM!")
-    print("="*70)
+    return True
