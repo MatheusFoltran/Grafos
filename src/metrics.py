@@ -15,21 +15,8 @@ except Exception:
 
 
 def measure_performance(func: Callable, *args, **kwargs) -> Dict[str, Any]:
-    """
-    Mede tempo de execução e uso de memória de uma função.
-    
-    Args:
-        func: função a ser medida
-        *args, **kwargs: argumentos para a função
-    
-    Returns:
-        Dicionário com:
-        - result: resultado da função
-        - time_seconds: tempo de execução em segundos
-        - memory_mb: memória usada em MB
-        - peak_memory_mb: pico de memória em MB
-    """
-    # opcional: medir RSS do processo antes (se psutil disponível)
+    """Mede tempo e memória de execução."""
+    # pegar RSS antes (se tiver psutil)
     mem_rss_before = None
     if _HAS_PSUTIL:
         try:
@@ -38,21 +25,18 @@ def measure_performance(func: Callable, *args, **kwargs) -> Dict[str, Any]:
         except Exception:
             mem_rss_before = None
 
-    # Iniciar medição de memória tracemalloc
     tracemalloc.start()
 
-    # Medir tempo (wall) e tempo de CPU
     start_time = time.perf_counter()
     start_cpu = time.process_time()
     result = func(*args, **kwargs)
     end_cpu = time.process_time()
     end_time = time.perf_counter()
 
-    # Obter estatísticas de memória tracemalloc
     current, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
-    # opcional: medir RSS do processo após execução
+    # pegar RSS depois
     mem_rss_after = None
     if _HAS_PSUTIL:
         try:

@@ -1,8 +1,8 @@
 # Avaliação Computacional: Prim vs Kruskal
 
-Implementação e comparação dos algoritmos de Prim e Kruskal para cálculo de Árvore Geradora Mínima (MST).
+Implementação e comparação dos algoritmos de Prim e Kruskal para MST.
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 .
@@ -30,10 +30,11 @@ Implementação e comparação dos algoritmos de Prim e Kruskal para cálculo de
 └── README.md
 ```
 
-## 🔧 Requisitos
+## Requisitos
 
-- Python 3.8+
-- Bibliotecas padrão: `heapq`, `csv`, `math`, `time`, `tracemalloc`
+Python 3.8+
+
+Bibliotecas padrão: heapq, csv, math, time, tracemalloc
 
 ### Instalação de Dependências
 
@@ -42,16 +43,16 @@ Implementação e comparação dos algoritmos de Prim e Kruskal para cálculo de
 pip install -r requirements.txt
 ```
 
-**Dependências opcionais:**
-- `psutil` - Medição de RSS (memória total do processo) - **já implementado**
-- `pandas`, `matplotlib`, `seaborn` - Análise e visualização de resultados
-- `jupyter` - Para rodar o notebook de análise
+Dependências opcionais:
+- `psutil` - medição de RSS (memória total do processo)
+- `pandas`, `matplotlib`, `seaborn` - análise e visualização
+- `jupyter` - para rodar o notebook de análise
 
-**Nota:** O projeto funciona sem essas dependências, mas com funcionalidade reduzida:
+Funciona sem essas dependências, mas com funcionalidade reduzida:
 - Sem `psutil`: apenas medição via `tracemalloc` (heap Python)
 - Sem pandas/matplotlib: não é possível gerar gráficos no notebook
 
-## 📊 Formato dos Arquivos CSV
+## Formato dos Arquivos CSV
 
 ### Nodes*.csv (Vértices)
 ```csv
@@ -71,12 +72,7 @@ source,target
 1,3
 ```
 
-**Importante:** 
-- Vértices têm ID numérico + coordenadas UTM (Universal Transverse Mercator)
-- Arestas usam os IDs dos vértices (podem começar em 1, são normalizados internamente)
-- Peso das arestas = distância euclidiana calculada automaticamente: d = √[(x₁-x₂)² + (y₁-y₂)²]
-
-## 🚀 Uso
+## Uso
 
 ### Execução Individual (CLI)
 
@@ -101,13 +97,13 @@ python src/main.py \
     --algorithm kruskal
 ```
 
-**Parâmetros:**
-- `--vertices`: arquivo CSV com vértices (Nodes*.csv)
-- `--edges`: arquivo CSV com arestas (Edges*.csv)
-- `--algorithm`: prim | kruskal | both (padrão: both)
-- `--repetitions`: número de repetições (padrão: 1)
+Parâmetros:
+- `--vertices`: arquivo CSV com vértices
+- `--edges`: arquivo CSV com arestas
+- `--algorithm`: prim | kruskal | both
+- `--repetitions`: número de repetições
 
-**Saída típica:**
+Exemplo de saída:
 ```
 Grafo carregado:
   Vértices: 8980
@@ -116,20 +112,20 @@ Grafo carregado:
 PRIM - Execução 1/3
   Peso da MST: 3015372.43
   Arestas na MST: 8979
-  Validação: ✓ MST/Floresta válida
+  Validação: OK - MST/Floresta válida
   Tempo: 30.69 ms
   Memória pico: 751.18 KB
 
 KRUSKAL - Execução 1/3
   Peso da MST: 3015372.43
   Arestas na MST: 8979
-  Validação: ✓ MST/Floresta válida
+  Validação: OK - MST/Floresta válida
   Tempo: 23.91 ms
   Memória pico: 749.21 KB
 
 COMPARAÇÃO FINAL
   Kruskal é 1.14x mais rápido
-  ✓ Pesos idênticos (diff: 0.000000)
+  Pesos idênticos (diff: 0.000000)
 ```
 
 ### Experimentos Automatizados
@@ -146,7 +142,7 @@ python src/experiments.py -r 5 -o results/resultados_experimentos.csv
 jupyter notebook src/analysis.ipynb
 ```
 
-## 🧪 Testes Básicos
+## Testes Básicos
 
 Cada módulo pode ser testado individualmente:
 
@@ -157,7 +153,7 @@ python src/kruskal.py          # Teste Kruskal + Union-Find
 python src/metrics.py          # Teste medições
 ```
 
-## ⚙️ Implementações
+## Implementações
 
 ### Prim
 - Usa `heapq` (min-heap) para seleção eficiente de vértices
@@ -172,15 +168,15 @@ python src/metrics.py          # Teste medições
 - Complexidade: O(E log E)
 - Lida com grafos desconexos
 
-## 📈 Métricas Coletadas
+## Métricas Coletadas
 
 Para cada execução:
-- ⏱️ **Tempo de execução** (wall time e CPU time)
-- 💾 **Memória heap Python** (`tracemalloc`) - alocações Python
-- 💾 **Memória RSS** (`psutil`, se instalado) - memória total do processo
-- 📊 **Peso da MST**
-- 🔢 **Número de arestas na MST**
-- ✅ **Validação** (floresta geradora válida)
+- **Tempo de execução** (wall time e CPU time)
+- **Memória heap Python** (`tracemalloc`) - alocações Python
+- **Memória RSS** (`psutil`, se instalado) - memória total do processo
+- **Peso da MST**
+- **Número de arestas na MST**
+- **Validação** (floresta geradora válida)
 
 ### Medição de Memória
 

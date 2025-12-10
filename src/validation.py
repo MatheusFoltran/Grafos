@@ -1,10 +1,6 @@
 """
-Módulo de validação robusta para Árvores/Florestas Geradoras Mínimas.
-
-Verifica:
-1. Ausência de ciclos (acyclicity)
-2. Cobertura completa de vértices (completeness)
-3. Número correto de arestas por componente conexa
+Validação de MST/Floresta.
+Verifica ciclos, cobertura de vértices e número de arestas.
 """
 from typing import List, Tuple, Dict, Set
 
@@ -41,7 +37,6 @@ class UnionFind:
         return True
     
     def get_component_sizes(self) -> dict:
-        """Retorna tamanho de cada componente."""
         components = {}
         for i in range(len(self.parent)):
             root = self.find(i)
@@ -50,16 +45,7 @@ class UnionFind:
 
 
 def get_original_components(n_vertices: int, edges: List[Tuple[int, int, float]]) -> dict:
-    """
-    Identifica componentes conexas do grafo original.
-    
-    Args:
-        n_vertices: número de vértices
-        edges: lista de arestas do grafo original (u, v, peso)
-    
-    Returns:
-        Dicionário {componente_id: {vértices}}
-    """
+    """Identifica componentes conexas do grafo original."""
     uf = UnionFind(n_vertices)
     
     # Unir vértices conectados
@@ -83,7 +69,7 @@ def validate_mst(n_vertices: int,
     """Validação completa de MST/Floresta.
 
     Condições verificadas:
-    1. Não há ciclos (acyclicidade)
+    1. Não há ciclos
     2. Nenhuma aresta conecta componentes diferentes do grafo original
     3. Para cada componente com k vértices, existem exatamente k-1 arestas na MST
     """

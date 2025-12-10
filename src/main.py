@@ -15,17 +15,7 @@ from metrics import measure_performance, format_time, format_memory
 
 
 def run_algorithm(algorithm: str, graph, repetitions: int = 1):
-    """
-    Executa um algoritmo múltiplas vezes e coleta métricas.
-    
-    Args:
-        algorithm: 'prim' ou 'kruskal'
-        graph: objeto Graph
-        repetitions: número de repetições
-    
-    Returns:
-        Lista de dicionários com métricas de cada execução
-    """
+    """Executa algoritmo múltiplas vezes e coleta métricas."""
     results = []
     
     for i in range(repetitions):
@@ -83,7 +73,6 @@ def run_algorithm(algorithm: str, graph, repetitions: int = 1):
 
 
 def print_comparison(prim_results, kruskal_results):
-    """Imprime comparação entre os algoritmos."""
     print("\n" + "="*70)
     print("COMPARAÇÃO FINAL")
     print("="*70)

@@ -15,16 +15,7 @@ from metrics import measure_performance
 
 
 def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dict]:
-    """
-    Executa experimentos em múltiplos grafos.
-    
-    Args:
-        graph_configs: lista de dicionários com 'name', 'vertices', 'edges'
-        repetitions: número de repetições por grafo/algoritmo
-    
-    Returns:
-        Lista de resultados (um dicionário por execução)
-    """
+    """Executa experimentos em múltiplos grafos e retorna resultados."""
     all_results = []
     
     for config in graph_configs:
