@@ -23,13 +23,11 @@ def run_algorithm(algorithm: str, graph, repetitions: int = 1):
             adj = graph.get_adjacency_list()
             metrics = measure_performance(prim, graph.n_vertices, adj)
             mst_edges, total_weight = metrics['result']
-            # Validação completa
             valid, msg = validate_mst(graph.n_vertices, graph.edges, mst_edges)
         
         elif algorithm == 'kruskal':
             metrics = measure_performance(kruskal, graph.n_vertices, graph.edges)
             mst_edges, total_weight = metrics['result']
-            # Validação completa
             valid, msg = validate_mst(graph.n_vertices, graph.edges, mst_edges)
         
         else:
@@ -67,15 +65,13 @@ def run_algorithm(algorithm: str, graph, repetitions: int = 1):
                     print(f"  RSS: {format_memory(mem_rss)}")
             
             if not valid:
-                print(f"ATENÇÃO: MST INVÁLIDA!")
+                print(f"MST inválida!")
     
     return results
 
 
 def print_comparison(prim_results, kruskal_results):
-    print("\n" + "="*70)
-    print("COMPARAÇÃO FINAL")
-    print("="*70)
+    print("\nCOMPARAÇÃO FINAL")
     
     # Médias
     prim_avg_time = sum(r['time_seconds'] for r in prim_results) / len(prim_results)
@@ -110,9 +106,7 @@ def print_comparison(prim_results, kruskal_results):
     if weight_diff < 0.01:
         print(f"Pesos idênticos (diff: {weight_diff:.6f})")
     else:
-        print(f"ATENÇÃO: Pesos diferentes! (diff: {weight_diff:.2f})")
-    
-    print("="*70 + "\n")
+        print(f"Pesos diferentes (diff: {weight_diff:.2f})")
 
 
 def main():
@@ -146,10 +140,10 @@ def main():
     
     # Validar arquivos
     if not Path(args.vertices).exists():
-        print(f"ERRO: Arquivo não encontrado: {args.vertices}")
+        print(f"Arquivo não encontrado: {args.vertices}")
         sys.exit(1)
     if not Path(args.edges).exists():
-        print(f"ERRO: Arquivo não encontrado: {args.edges}")
+        print(f"Arquivo não encontrado: {args.edges}")
         sys.exit(1)
     
     # Carregar grafo
@@ -172,15 +166,11 @@ def main():
     results = {}
     
     if args.algorithm in ['prim', 'both']:
-        print(f"\n{'='*70}")
         print(f"EXECUTANDO PRIM ({args.repetitions} repetições)")
-        print(f"{'='*70}")
         results['prim'] = run_algorithm('prim', graph, args.repetitions)
     
     if args.algorithm in ['kruskal', 'both']:
-        print(f"\n{'='*70}")
         print(f"EXECUTANDO KRUSKAL ({args.repetitions} repetições)")
-        print(f"{'='*70}")
         results['kruskal'] = run_algorithm('kruskal', graph, args.repetitions)
     
     # Comparação

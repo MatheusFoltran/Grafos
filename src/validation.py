@@ -66,28 +66,22 @@ def get_original_components(n_vertices: int, edges: List[Tuple[int, int, float]]
 def validate_mst(n_vertices: int,
                  original_edges: List[Tuple[int, int, float]],
                  mst_edges: List[Tuple[int, int, float]]) -> Tuple[bool, str]:
-    """Validação completa de MST/Floresta.
-
-    Condições verificadas:
-    1. Não há ciclos
-    2. Nenhuma aresta conecta componentes diferentes do grafo original
-    3. Para cada componente com k vértices, existem exatamente k-1 arestas na MST
     """
-
-    # 1) Componentes do grafo original
+    Valida MST/Floresta: verifica ausência de ciclos, cobertura de vértices
+    e número correto de arestas por componente.
+    """
     original_components = get_original_components(n_vertices, original_edges)
-    comp_list = list(original_components.values())  # lista de conjuntos de vértices
+    comp_list = list(original_components.values())
 
-    # Mapear cada vértice para o índice de sua componente
+    # mapear cada vértice para sua componente
     vertex_to_comp: Dict[int, int] = {}
     for idx, vertices in enumerate(comp_list):
         for v in vertices:
             vertex_to_comp[v] = idx
 
-    # Contador de arestas por componente
     comp_edge_counts: Dict[int, int] = {}
 
-    # 2) Verificar aciclicidade e conexões válidas
+    # verificar aciclicidade
     mst_uf = UnionFind(n_vertices)
     for u, v, _ in mst_edges:
         if not (0 <= u < n_vertices and 0 <= v < n_vertices):
@@ -105,7 +99,7 @@ def validate_mst(n_vertices: int,
 
         comp_edge_counts[comp_u] = comp_edge_counts.get(comp_u, 0) + 1
 
-    # 3) Conferir número de arestas por componente (k-1)
+    # Conferir número de arestas por componente (k-1)
     for idx, vertices in enumerate(comp_list):
         k = len(vertices)
         expected = max(0, k - 1)

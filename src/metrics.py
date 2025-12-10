@@ -5,7 +5,6 @@ import time
 import tracemalloc
 from typing import Callable, Any, Dict
 
-# Optional psutil for RSS measurements
 try:
     import psutil
     _HAS_PSUTIL = True

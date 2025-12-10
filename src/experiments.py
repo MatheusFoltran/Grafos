@@ -23,9 +23,7 @@ def run_experiments(graph_configs: List[Dict], repetitions: int = 5) -> List[Dic
         vertices_file = config['vertices']
         edges_file = config['edges']
         
-        print(f"\n{'='*70}")
-        print(f"Processando: {name}")
-        print(f"{'='*70}")
+        print(f"\nProcessando: {name}")
         
         try:
             # Carregar grafo e normalizar para índices 0-based
@@ -115,17 +113,12 @@ def save_results(results: List[Dict], output_file: str):
         'cpu_seconds',
         'mst_weight', 'mst_edges_count', 'valid'
     ]
-    # include validation message for debugging invalid MSTs
     if 'validation_msg' in results[0]:
         fieldnames.append('validation_msg')
-    # include RSS memory if present
     if 'mem_rss_mb' in results[0]:
         fieldnames.append('mem_rss_mb')
     if 'mem_rss_before_mb' in results[0]:
         fieldnames.append('mem_rss_before_mb')
-    if 'cpu_seconds' in results[0]:
-        # ensure cpu column appears near time columns
-        pass
     
     with open(output_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -154,8 +147,8 @@ Exemplos de uso:
   # Usar diretório customizado
   python experiments.py --graph-dir /caminho/para/grafos
   
-  # Ajustar repetições e tolerância
-  python experiments.py --repetitions 20 --coord-tolerance 0.001
+  # Ajustar repetições
+  python experiments.py --repetitions 20
   
   # Customizar arquivo de saída
   python experiments.py --output resultados_custom.csv
@@ -186,14 +179,6 @@ Exemplos de uso:
     )
     
     parser.add_argument(
-        '--coord-tolerance', '-c',
-        type=float,
-        default=0.0,
-        metavar='TOL',
-        help='Tolerância para matching por coordenadas (default: 0.0)'
-    )
-    
-    parser.add_argument(
         '--output', '-o',
         type=str,
         default='results/resultados_experimentos.csv',
@@ -208,14 +193,12 @@ Exemplos de uso:
     grafos_dir = project_root / args.graph_dir
 
     if not grafos_dir.exists():
-        print(f"\nERRO: Diretório não encontrado: {grafos_dir}")
-        print(f"   Certifique-se que o diretório existe e contém subpastas com grafos.")
+        print(f"\nDiretório não encontrado: {grafos_dir}")
         sys.exit(1)
 
     graph_configs = []
     
     print(f"\nBuscando grafos em: {grafos_dir}")
-    print(f"{'='*70}")
     
     if grafos_dir.exists() and grafos_dir.is_dir():
         for sub in sorted(grafos_dir.iterdir()):
@@ -244,16 +227,12 @@ Exemplos de uso:
                 })
                 print(f"  - {sub.name}: {Path(nodes_file).name}, {Path(edges_file).name}")
             else:
-                print(f"  AVISO: Pulando {sub.name}: arquivos de nós/arestas não encontrados")
+                print(f"  Pulando {sub.name}: arquivos de nós/arestas não encontrados")
     
     if not graph_configs:
-        print(f"\nERRO: Nenhum grafo válido encontrado!")
+        print(f"\nNenhum grafo válido encontrado em {grafos_dir}")
         if args.graphs:
-            print(f"   Grafos solicitados: {', '.join(args.graphs)}")
-        print(f"\nDicas:")
-        print(f"   • Verifique se {grafos_dir} contém subpastas")
-        print(f"   • Cada subpasta deve ter arquivos com 'node'/'nodes' e 'edge'/'edges' no nome")
-        print(f"   • Use --graph-dir para especificar outro diretório")
+            print(f"Grafos solicitados: {', '.join(args.graphs)}")
         sys.exit(1)
 
     # Validar que arquivos existem
@@ -262,23 +241,20 @@ Exemplos de uso:
         if Path(config['vertices']).exists() and Path(config['edges']).exists():
             valid_configs.append(config)
         else:
-            print(f"AVISO: Pulando {config['name']}: arquivos não encontrados")
+            print(f"Pulando {config['name']}: arquivos não encontrados")
     
     if not valid_configs:
-        print("\nERRO: Nenhum grafo válido encontrado após verificação de arquivos!")
+        print("\nNenhum grafo válido encontrado após verificação de arquivos")
         sys.exit(1)
     
-    print(f"\n{'='*70}")
-    print(f"CONFIGURAÇÃO DOS EXPERIMENTOS")
-    print(f"{'='*70}")
+    print(f"\nCONFIGURAÇÃO DOS EXPERIMENTOS")
     print(f"Diretório de grafos: {grafos_dir}")
     print(f"Grafos selecionados: {len(valid_configs)}")
     for cfg in valid_configs:
-        print(f"  • {cfg['name']}")
+        print(f"- {cfg['name']}")
     print(f"Repetições por algoritmo: {args.repetitions}")
     print(f"Total de execuções: {len(valid_configs) * 2 * args.repetitions}")
     print(f"Arquivo de saída: {args.output}")
-    print(f"{'='*70}")
     
     # Executar experimentos
     results = run_experiments(valid_configs, args.repetitions)
@@ -287,14 +263,11 @@ Exemplos de uso:
     save_results(results, args.output)
     
     # Resumo
-    print(f"\n{'='*70}")
-    print("EXPERIMENTOS CONCLUÍDOS")
-    print(f"{'='*70}")
+    print(f"\nExperimentos concluídos")
     print(f"Total de execuções: {len(results)}")
     print(f"Grafos processados: {len(valid_configs)}")
     print(f"Resultados salvos em: {args.output}")
-    print(f"\nPróximo passo: use analysis.ipynb para gerar gráficos e análises")
-    print(f"{'='*70}\n")
+    print(f"\nUse analysis.ipynb para gerar gráficos e análises")
 
 
 if __name__ == "__main__":
