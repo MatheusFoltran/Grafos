@@ -14,7 +14,7 @@ def prim(n_vertices: int, adjacencias: List[List[Tuple[int, float]]]) -> Tuple[L
     custo = [float('inf')] * n_vertices
     pai = [-1] * n_vertices
     
-    # processa cada componente do grafo
+    # Processa cada componente conexa separadamente (gera floresta se desconexo)
     for vertice_inicial in range(n_vertices):
         if visitado[vertice_inicial]:
             continue

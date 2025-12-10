@@ -87,6 +87,7 @@ def kruskal(n_vertices: int, arestas: List[Tuple[int, int, float]]) -> Tuple[Lis
             arestas_mst.append((u, v, peso))
             peso_total += peso
             
+            # Otimização: para quando temos MST completa
             if len(arestas_mst) == max_arestas:
                 break
     

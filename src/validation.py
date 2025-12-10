@@ -58,9 +58,11 @@ def obter_componentes_originais(n_vertices: int, arestas: List[Tuple[int, int, f
 def validar_mst(n_vertices: int,
                 arestas_originais: List[Tuple[int, int, float]],
                 arestas_mst: List[Tuple[int, int, float]]) -> bool:
+    # Encontra componentes conexas do grafo original
     componentes_originais = obter_componentes_originais(n_vertices, arestas_originais)
     lista_componentes = list(componentes_originais.values())
 
+    # Mapeia cada vértice para sua componente (para validação rápida)
     vertice_para_comp: Dict[int, int] = {}
     for idx, vertices in enumerate(lista_componentes):
         for v in vertices:
@@ -84,12 +86,14 @@ def validar_mst(n_vertices: int,
             print("Vértice fora do grafo original")
             return False
             
+        # MST não pode conectar componentes desconexas do grafo original
         if comp_u != comp_v:
             print("Aresta conecta componentes distintas")
             return False
 
         contagem_arestas_comp[comp_u] = contagem_arestas_comp.get(comp_u, 0) + 1
 
+    # Verifica se cada componente tem exatamente (n-1) arestas (floresta geradora)
     for idx, vertices in enumerate(lista_componentes):
         tamanho_comp = len(vertices)
         arestas_esperadas = max(0, tamanho_comp - 1)
