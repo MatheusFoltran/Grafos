@@ -3,7 +3,7 @@ import math
 from typing import List, Tuple, Dict
 
 
-class Graph:
+class Grafo:
     
     def __init__(self):
         self.vertices: Dict[int, Tuple[float, float]] = {}
@@ -11,7 +11,7 @@ class Graph:
         self.n_vertices = 0
         self.n_arestas = 0
     
-    def add_vertex(self, vertex_id: int, x: float, y: float):
+    def adicionar_vertice(self, vertex_id: int, x: float, y: float):
         if vertex_id not in self.vertices:
             self.vertices[vertex_id] = (x, y)
             self.n_vertices += 1
@@ -37,12 +37,12 @@ class Graph:
     def obter_mapeamento_vertices(self) -> Dict[int, int]:
         return {vid: idx for idx, vid in enumerate(sorted(self.vertices.keys()))}
     
-    def normalizar_para_zero(self) -> 'Graph':
+    def normalizar_para_zero(self) -> 'Grafo':
         mapeamento = self.obter_mapeamento_vertices()
-        grafo_novo = Graph()
+        grafo_novo = Grafo()
         
         for id_antigo, (x, y) in self.vertices.items():
-            grafo_novo.add_vertex(mapeamento[id_antigo], x, y)
+            grafo_novo.adicionar_vertice(mapeamento[id_antigo], x, y)
         
         for u, v, peso in self.arestas:
             grafo_novo.adicionar_aresta(mapeamento[u], mapeamento[v], peso)
@@ -54,8 +54,8 @@ def distancia_euclidiana(x1: float, y1: float, x2: float, y2: float) -> float:
     return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 
-def carregar_grafo(arquivo_vertices: str, arquivo_arestas: str) -> Graph:
-    grafo = Graph()
+def carregar_grafo(arquivo_vertices: str, arquivo_arestas: str) -> Grafo:
+    grafo = Grafo()
     
     # carregar vértices
     with open(arquivo_vertices, 'r', encoding='utf-8') as f:
@@ -79,7 +79,7 @@ def carregar_grafo(arquivo_vertices: str, arquivo_arestas: str) -> Graph:
                 id_vertice = int(primeira_linha[0])
                 x = float(primeira_linha[1])
                 y = float(primeira_linha[2])
-                grafo.add_vertex(id_vertice, x, y)
+                grafo.adicionar_vertice(id_vertice, x, y)
             except (ValueError, IndexError) as erro:
                 raise ValueError(f"Formato inválido no arquivo de vértices: {erro}")
         
@@ -91,7 +91,7 @@ def carregar_grafo(arquivo_vertices: str, arquivo_arestas: str) -> Graph:
                 id_vertice = int(linha[0])
                 x = float(linha[1])
                 y = float(linha[2])
-                grafo.add_vertex(id_vertice, x, y)
+                grafo.adicionar_vertice(id_vertice, x, y)
             except (ValueError, IndexError):
                 continue
     

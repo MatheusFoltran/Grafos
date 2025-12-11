@@ -68,12 +68,17 @@ def executar_algoritmo(algoritmo: str, grafo, repeticoes: int = 1):
 def print_comparison(resultados_prim, resultados_kruskal):
     print("\nCOMPARAÇÃO FINAL")
     
-    # Médias
-    tempo_medio_prim = sum(r['time_seconds'] for r in resultados_prim) / len(resultados_prim)
-    tempo_medio_kruskal = sum(r['time_seconds'] for r in resultados_kruskal) / len(resultados_kruskal)
+    # Calcular médias de tempo
+    tempos_prim = [r['time_seconds'] for r in resultados_prim]
+    tempos_kruskal = [r['time_seconds'] for r in resultados_kruskal]
+    tempo_medio_prim = sum(tempos_prim) / len(tempos_prim)
+    tempo_medio_kruskal = sum(tempos_kruskal) / len(tempos_kruskal)
     
-    mem_media_prim = sum(r['peak_memory_mb'] for r in resultados_prim) / len(resultados_prim)
-    mem_media_kruskal = sum(r['peak_memory_mb'] for r in resultados_kruskal) / len(resultados_kruskal)
+    # Calcular médias de memória
+    memorias_prim = [r['peak_memory_mb'] for r in resultados_prim]
+    memorias_kruskal = [r['peak_memory_mb'] for r in resultados_kruskal]
+    mem_media_prim = sum(memorias_prim) / len(memorias_prim)
+    mem_media_kruskal = sum(memorias_kruskal) / len(memorias_kruskal)
     
     peso_prim = resultados_prim[0]['mst_weight']
     peso_kruskal = resultados_kruskal[0]['mst_weight']
@@ -84,10 +89,10 @@ def print_comparison(resultados_prim, resultados_kruskal):
     
     if tempo_medio_prim < tempo_medio_kruskal:
         aceleracao = tempo_medio_kruskal / tempo_medio_prim
-        print(f"  → Prim é {aceleracao:.2f}x mais rápido")
+        print(f" Prim é {aceleracao:.2f}x mais rápido")
     else:
         aceleracao = tempo_medio_prim / tempo_medio_kruskal
-        print(f"  → Kruskal é {aceleracao:.2f}x mais rápido")
+        print(f" Kruskal é {aceleracao:.2f}x mais rápido")
     
     print(f"\nMemória média (pico):")
     print(f"  Prim:    {formatar_memoria(mem_media_prim)}")
@@ -99,9 +104,9 @@ def print_comparison(resultados_prim, resultados_kruskal):
     
     diferenca_peso = abs(peso_prim - peso_kruskal)
     if diferenca_peso < 0.01:
-        print(f"Pesos idênticos (diff: {diferenca_peso:.6f})")
+        print(f"Pesos idênticos (diferença: {diferenca_peso:.6f})")
     else:
-        print(f"Pesos diferentes (diff: {diferenca_peso:.2f})")
+        print(f"Pesos diferentes (diferença: {diferenca_peso:.2f})")
 
 
 def main():
